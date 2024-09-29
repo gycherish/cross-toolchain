@@ -1,0 +1,6 @@
+.vscode
+build
+.xmake
+source*
+out*
+package*
