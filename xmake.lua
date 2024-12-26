@@ -39,24 +39,24 @@ target("toolchain-env")
         target:set("toolchain.source_dir", "$(projectdir)/source")
         target:set("toolchain.package_dir", "$(projectdir)/package")
         target:set("toolchain.out_dir", "$(projectdir)/out")
-        if get_config("Libc") == "musl" then
-            target:set("toolchain.target", "$(Arch)-$(Vendor)-linux-musl")
-        else
-            target:set("toolchain.target", "$(Arch)-$(Vendor)-linux-gnu")
-        end
-        target:set("toolchain.prefix", path.join(target:get("toolchain.out_dir"), target:get("toolchain.target")))
-        target:set("toolchain.build_dir", target:get("toolchain.prefix") .. "-build")
         target:set("toolchain.patch_dir", "$(projectdir)/patches")
+        if get_config("Libc") == "musl" then
+            target:set("toolchain.cross.target", "$(Arch)-$(Vendor)-linux-musl")
+        else
+            target:set("toolchain.cross.target", "$(Arch)-$(Vendor)-linux-gnu")
+        end
+        target:set("toolchain.cross.prefix", path.join(target:get("toolchain.out_dir"), target:get("toolchain.cross.target")))
+        target:set("toolchain.cross.build_dir", target:get("toolchain.cross.prefix") .. "-build")
 
         import("core.base.option")
         if option.get("verbose") then
             print("toolchain.source_dir: ", target:get("toolchain.source_dir"))
             print("toolchain.package_dir: ", target:get("toolchain.package_dir"))
-            print("toolchain.build_dir: ", target:get("toolchain.build_dir"))
             print("toolchain.out_dir: ", target:get("toolchain.out_dir"))
-            print("toolchain.target: ", target:get("toolchain.target"))
-            print("toolchain.prefix: ", target:get("toolchain.prefix"))
             print("toolchain.patch_dir: ", target:get("toolchain.patch_dir"))
+            print("toolchain.cross.build_dir: ", target:get("toolchain.cross.build_dir"))
+            print("toolchain.cross.target: ", target:get("toolchain.cross.target"))
+            print("toolchain.cross.prefix: ", target:get("toolchain.cross.prefix"))
         end
     end)
 
@@ -78,4 +78,4 @@ target("show-env")
 target("toolchain")
     set_default(true)
     set_kind("phony")
-    add_deps("gcc-package")
+    add_deps("gcc-cross-package")
