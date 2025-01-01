@@ -8,6 +8,8 @@ target("gcc-env")
         target:set("toolchain.gcc.url", "https://github.com/gcc-mirror/gcc.git")
         target:set("toolchain.gcc.branch", "releases/gcc-14")
         target:set("toolchain.gcc.source_dir", path.join(toolchain_env:get("toolchain.source_dir"), "gcc-14"))
+        target:set("toolchain.native.gcc.build_dir", path.join(toolchain_env:get("toolchain.native.build_dir"), "gcc-14"))
+        target:set("toolchain.native.gcc.cc", path.join(toolchain_env:get("toolchain.native.prefix"), "bin", "gcc"))
         target:set("toolchain.cross.gcc.build_bootstrap_dir", path.join(toolchain_env:get("toolchain.cross.build_dir"), "gcc-14-bootstrap"))
         target:set("toolchain.cross.gcc.build_final_dir", path.join(toolchain_env:get("toolchain.cross.build_dir"), "gcc-14-final"))
         target:set("toolchain.cross.gcc.build_final_flag", path.join(target:get("toolchain.cross.gcc.build_final_dir"), "gcc-installed"))
@@ -21,6 +23,8 @@ target("gcc-env")
             print("toolchain.gcc.url: ", target:get("toolchain.gcc.url"))
             print("toolchain.gcc.branch: ", target:get("toolchain.gcc.branch"))
             print("toolchain.gcc.source_dir: ", target:get("toolchain.gcc.source_dir"))
+            print("toolchain.native.gcc.build_dir: ", target:get("toolchain.native.gcc.build_dir"))
+            print("toolchain.native.gcc.cc: ", target:get("toolchain.native.gcc.cc"))
             print("toolchain.cross.gcc.build_bootstrap_dir: ", target:get("toolchain.cross.gcc.build_bootstrap_dir"))
             print("toolchain.cross.gcc.build_final_dir: ", target:get("toolchain.cross.gcc.build_final_dir"))
             print("toolchain.cross.gcc.build_final_flag: ", target:get("toolchain.cross.gcc.build_final_flag"))
@@ -61,6 +65,35 @@ target("gcc-download-prerequisites")
         local gcc_env = project.target("gcc-env")
         os.cd(gcc_env:get("toolchain.gcc.source_dir"))
         os.exec("./contrib/download_prerequisites")
+    end)
+
+target("gcc-native-build")
+    set_default(false)
+    set_kind("phony")
+    add_deps("gcc-download-prerequisites")
+    on_build(function (target)
+        import("core.project.project")
+        local toolchain_env = project.target("toolchain-env")
+        local gcc_env = project.target("gcc-env")
+        if os.exists(gcc_env:get("toolchain.native.gcc.cc")) then 
+            print("native gcc has already built: ", gcc_env:get("toolchain.native.gcc.cc"))
+            return
+        end
+        local argv = {
+            "--prefix=" .. toolchain_env:get("toolchain.native.prefix"),
+            "--enable-languages=c,c++",
+            "--enable-threads=posix",
+            "--disable-bootstrap",
+            "--disable-werror",
+            "--disable-nls",
+            "--disable-multilib",
+            "--with-pic"
+        }
+        os.vrun("mkdir -p " .. gcc_env:get("toolchain.native.gcc.build_dir"))
+        os.cd(gcc_env:get("toolchain.native.gcc.build_dir"))
+        os.vrunv(gcc_env:get("toolchain.gcc.source_dir") .. "/configure", argv)
+        os.exec("make -j")
+        os.exec("make install-strip -j")
     end)
 
 target("gcc-cross-bootstrap-build")
@@ -157,7 +190,7 @@ target("gcc-cross-package")
             return
         end
         os.mkdir(toolchain_env:get("toolchain.package_dir"))
-        os.cd(toolchain_env:get("toolchain.out_dir"))
+        os.cd(toolchain_env:get("toolchain.cross.out_dir"))
         local argv = {
             "-czvf",
             package_file,

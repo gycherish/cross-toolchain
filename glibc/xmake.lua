@@ -8,6 +8,8 @@ target("glibc-env")
         target:set("toolchain.glibc.url", "https://github.com/bminor/glibc.git")
         target:set("toolchain.glibc.branch", "glibc-2.38")
         target:set("toolchain.glibc.source_dir", path.join(toolchain_env:get("toolchain.source_dir"), "glibc-2.38"))
+        target:set("toolchain.native.glibc.build_dir", path.join(toolchain_env:get("toolchain.native.build_dir"), "glibc-2.38"))
+        target:set("toolchain.native.glibc.libc", path.join(toolchain_env:get("toolchain.native.prefix"), "lib", "libc.so"))
         target:set("toolchain.cross.glibc.build_dir", path.join(toolchain_env:get("toolchain.cross.build_dir"), "glibc-2.38"))
         target:set("toolchain.cross.glibc.libc", path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target"), "lib", "libc.so"))
 
@@ -16,6 +18,8 @@ target("glibc-env")
             print("toolchain.glibc.url: ", target:get("toolchain.glibc.url"))
             print("toolchain.glibc.branch: ", target:get("toolchain.glibc.branch"))
             print("toolchain.glibc.source_dir: ", target:get("toolchain.glibc.source_dir"))
+            print("toolchain.native.glibc.build_dir: ", target:get("toolchain.native.glibc.build_dir"))
+            print("toolchain.native.glibc.libc: ", target:get("toolchain.native.glibc.libc"))
             print("toolchain.cross.glibc.build_dir: ", target:get("toolchain.cross.glibc.build_dir"))
             print("toolchain.cross.glibc.libc: ", target:get("toolchain.cross.glibc.libc"))
         end
@@ -38,6 +42,34 @@ target("glibc-download")
             branch = glibc_env:get("toolchain.glibc.branch"), 
             outputdir = glibc_env:get("toolchain.glibc.source_dir")
         })
+    end)
+
+target("glibc-native-build")
+    set_default(false)
+    set_kind("phony")
+    add_deps("glibc-download")
+    on_build(function (target)
+        import("devel.git")
+        import("core.project.project")
+        local toolchain_env = project.target("toolchain-env")
+        local gcc_env = project.target("gcc-env")
+        local glibc_env = project.target("glibc-env")
+        if os.exists(glibc_env:get("toolchain.native.glibc.libc")) then
+            print("native glibc has already built: ", glibc_env:get("toolchain.native.glibc.libc"))
+            return
+        end
+        local argv = {
+            "--prefix=" .. toolchain_env:get("toolchain.native.prefix"),
+            "--disable-bootstrap",
+            "--disable-werror",
+            "--disable-nls",
+            "--disable-profile"
+        }
+        os.vrun("mkdir -p " .. glibc_env:get("toolchain.native.glibc.build_dir"))
+        os.cd(glibc_env:get("toolchain.native.glibc.build_dir"))
+        os.vrunv(path.join(glibc_env:get("toolchain.glibc.source_dir"), "configure"), argv)
+        os.exec("make -j")
+        os.exec("make install -j")
     end)
 
 target("glibc-cross-build")
