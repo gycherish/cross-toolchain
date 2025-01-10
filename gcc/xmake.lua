@@ -17,6 +17,8 @@ target("gcc-env")
         target:set("toolchain.cross.gcc.cc", bin_prefix .. "gcc")
         target:set("toolchain.cross.gcc.cpp", bin_prefix .. "cpp")
         target:set("toolchain.cross.gcc.cxx", bin_prefix .. "g++")
+        target:set("toolchain.cross_native.gcc.build_dir", path.join(toolchain_env:get("toolchain.cross_native.build_dir"), "gcc-14"))
+        target:set("toolchain.cross_native.gcc.cc", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "bin", "gcc"))
 
         import("core.base.option")
         if option.get("verbose") then
@@ -31,6 +33,8 @@ target("gcc-env")
             print("toolchain.cross.gcc.cc: ", target:get("toolchain.cross.gcc.cc"))
             print("toolchain.cross.gcc.cpp: ", target:get("toolchain.cross.gcc.cpp"))
             print("toolchain.cross.gcc.cxx: ", target:get("toolchain.cross.gcc.cxx"))
+            print("toolchain.cross_native.gcc.build_dir: ", target:get("toolchain.cross_native.gcc.build_dir"))
+            print("toolchain.cross_native.gcc.cc: ", target:get("toolchain.cross_native.gcc.cc"))
         end
     end)
 
@@ -64,16 +68,24 @@ target("gcc-download-prerequisites")
         import("core.project.project")
         local gcc_env = project.target("gcc-env")
         os.cd(gcc_env:get("toolchain.gcc.source_dir"))
-        os.exec("./contrib/download_prerequisites")
+        os.exec("./contrib/download_prerequisites --only-gettext")
     end)
 
 target("gcc-native-build")
     set_default(false)
     set_kind("phony")
     add_deps("gcc-download-prerequisites")
+    add_deps("gmp-native-build")
+    add_deps("isl-native-build")
+    add_deps("mpc-native-build")
+    add_deps("mpfr-native-build")
     on_build(function (target)
         import("core.project.project")
         local toolchain_env = project.target("toolchain-env")
+        local gmp_env = project.target("gmp-env")
+        local isl_env = project.target("isl-env")
+        local mpc_env = project.target("mpc-env")
+        local mpfr_env = project.target("mpfr-env")
         local gcc_env = project.target("gcc-env")
         if os.exists(gcc_env:get("toolchain.native.gcc.cc")) then 
             print("native gcc has already built: ", gcc_env:get("toolchain.native.gcc.cc"))
@@ -87,7 +99,11 @@ target("gcc-native-build")
             "--disable-werror",
             "--disable-nls",
             "--disable-multilib",
-            "--with-pic"
+            "--with-pic",
+            "--with-gmp=" .. gmp_env:get("toolchain.native.gmp.prefix"),
+            "--with-isl=" .. isl_env:get("toolchain.native.isl.prefix"),
+            "--with-mpc=" .. mpc_env:get("toolchain.native.mpc.prefix"),
+            "--with-mpfr=" .. mpfr_env:get("toolchain.native.mpfr.prefix")
         }
         os.vrun("mkdir -p " .. gcc_env:get("toolchain.native.gcc.build_dir"))
         os.cd(gcc_env:get("toolchain.native.gcc.build_dir"))
@@ -99,14 +115,22 @@ target("gcc-native-build")
 target("gcc-cross-bootstrap-build")
     set_default(false)
     set_kind("phony")
-    add_deps("binutils-cross-build")
     add_deps("gcc-download-prerequisites")
+    add_deps("gmp-native-build")
+    add_deps("isl-native-build")
+    add_deps("mpc-native-build")
+    add_deps("mpfr-native-build")
+    add_deps("binutils-cross-build")
     on_build(function (target)
         import("core.project.project")
         local toolchain_env = project.target("toolchain-env")
+        local gmp_env = project.target("gmp-env")
+        local isl_env = project.target("isl-env")
+        local mpc_env = project.target("mpc-env")
+        local mpfr_env = project.target("mpfr-env")
         local gcc_env = project.target("gcc-env")
         if os.exists(gcc_env:get("toolchain.cross.gcc.cc")) then
-            print("bootstrap gcc has already built: ", gcc_env:get("toolchain.cross.gcc.cc"))
+            print("cross bootstrap gcc has already built: ", gcc_env:get("toolchain.cross.gcc.cc"))
             return
         end
         local argv = {
@@ -126,7 +150,12 @@ target("gcc-cross-bootstrap-build")
             "--disable-libquadmath",
             "--disable-libssp",
             "--disable-libvtv",
-            "--disable-libstdcxx"
+            "--disable-libstdcxx",
+            "--with-pic",
+            "--with-gmp=" .. gmp_env:get("toolchain.native.gmp.prefix"),
+            "--with-isl=" .. isl_env:get("toolchain.native.isl.prefix"),
+            "--with-mpc=" .. mpc_env:get("toolchain.native.mpc.prefix"),
+            "--with-mpfr=" .. mpfr_env:get("toolchain.native.mpfr.prefix")
         }
         os.vrun("mkdir -p " .. gcc_env:get("toolchain.cross.gcc.build_bootstrap_dir"))
         os.cd(gcc_env:get("toolchain.cross.gcc.build_bootstrap_dir"))
@@ -138,6 +167,11 @@ target("gcc-cross-bootstrap-build")
 target("gcc-cross-final-build")
     set_default(false)
     set_kind("phony")
+    add_deps("gmp-native-build")
+    add_deps("isl-native-build")
+    add_deps("mpc-native-build")
+    add_deps("mpfr-native-build")
+    add_deps("gcc-cross-bootstrap-build")
     if get_config("Libc") == "musl" then
         add_deps("musl-cross-build")
     else
@@ -146,9 +180,13 @@ target("gcc-cross-final-build")
     on_build(function (target)
         import("core.project.project")
         local toolchain_env = project.target("toolchain-env")
+        local gmp_env = project.target("gmp-env")
+        local isl_env = project.target("isl-env")
+        local mpc_env = project.target("mpc-env")
+        local mpfr_env = project.target("mpfr-env")
         local gcc_env = project.target("gcc-env")
         if os.exists(gcc_env:get("toolchain.cross.gcc.build_final_flag")) then 
-            print("final gcc has already built: ", gcc_env:get("toolchain.cross.gcc.build_final_flag"))
+            print("cross final gcc has already built: ", gcc_env:get("toolchain.cross.gcc.cc"))
             return
         end
         local argv = {
@@ -161,7 +199,11 @@ target("gcc-cross-final-build")
             "--disable-werror",
             "--disable-nls",
             "--disable-multilib",
-            "--with-pic"
+            "--with-pic",
+            "--with-gmp=" .. gmp_env:get("toolchain.native.gmp.prefix"),
+            "--with-isl=" .. isl_env:get("toolchain.native.isl.prefix"),
+            "--with-mpc=" .. mpc_env:get("toolchain.native.mpc.prefix"),
+            "--with-mpfr=" .. mpfr_env:get("toolchain.native.mpfr.prefix")
         }
         if get_config("Libc") == "musl" then
             table.insert(argv, "--disable-shared")
@@ -178,19 +220,95 @@ target("gcc-cross-final-build")
 target("gcc-cross-package")
     set_default(false)
     set_kind("phony")
+    add_deps("gcc-cross-final-build")
     add_deps("gdb-cross-host-build")
     add_deps("gdb-cross-target-build")
     on_build(function (target)
         import("core.project.project")
         local toolchain_env = project.target("toolchain-env")
-        local gcc_env = project.target("gcc-env")
-        local package_file =  path.join(toolchain_env:get("toolchain.package_dir"), toolchain_env:get("toolchain.cross.target") .. ".tar.gz")
+        local package_file =  path.join(toolchain_env:get("toolchain.cross.package_dir"), toolchain_env:get("toolchain.cross.target") .. ".tar.gz")
         if os.exists(package_file) then 
-            print("toolchain has already packaged: ", package_file)
+            print("cross toolchain has already packaged: ", package_file)
             return
         end
-        os.mkdir(toolchain_env:get("toolchain.package_dir"))
+        os.mkdir(toolchain_env:get("toolchain.cross.package_dir"))
         os.cd(toolchain_env:get("toolchain.cross.out_dir"))
+        local argv = {
+            "-czvf",
+            package_file,
+            toolchain_env:get("toolchain.cross.target")
+        }
+        os.execv("tar", argv)
+    end)
+
+target("gcc-cross-native-build")
+    set_default(false)
+    set_kind("phony")
+    add_deps("gcc-cross-final-build")
+    add_deps("gmp-cross-build")
+    add_deps("isl-cross-build")
+    add_deps("mpc-cross-build")
+    add_deps("mpfr-cross-build")
+    on_build(function (target)
+        import("core.project.project")
+        local toolchain_env = project.target("toolchain-env")
+        local gmp_env = project.target("gmp-env")
+        local isl_env = project.target("isl-env")
+        local mpc_env = project.target("mpc-env")
+        local mpfr_env = project.target("mpfr-env")
+        local gcc_env = project.target("gcc-env")
+        if os.exists(gcc_env:get("toolchain.cross_native.gcc.cc")) then 
+            print("cross native gcc has already built: ", gcc_env:get("toolchain.cross_native.gcc.cc"))
+            return
+        end
+        local argv = {
+            "--prefix=" .. toolchain_env:get("toolchain.cross_native.prefix"),
+            "--host=" .. toolchain_env:get("toolchain.cross.target"),
+            "--target=" .. toolchain_env:get("toolchain.cross.target"),
+            "--enable-languages=c,c++",
+            "--enable-threads=posix",
+            "--disable-bootstrap",
+            "--disable-werror",
+            "--disable-nls",
+            "--disable-multilib",
+            "--with-pic",
+            "--with-gmp=" .. gmp_env:get("toolchain.cross.gmp.prefix"),
+            "--with-isl=" .. isl_env:get("toolchain.cross.isl.prefix"),
+            "--with-mpc=" .. mpc_env:get("toolchain.cross.mpc.prefix"),
+            "--with-mpfr=" .. mpfr_env:get("toolchain.cross.mpfr.prefix")
+        }
+        if get_config("Libc") == "musl" then
+            table.insert(argv, "--disable-shared")
+            table.insert(argv, "--disable-libsanitizer")
+        end
+        os.vrun("mkdir -p " .. gcc_env:get("toolchain.cross_native.gcc.build_dir"))
+        os.cd(gcc_env:get("toolchain.cross_native.gcc.build_dir"))
+        os.vrunv(gcc_env:get("toolchain.gcc.source_dir") .. "/configure", argv)
+        os.exec("make -j")
+        os.exec("make install-strip -j")
+    end)
+
+target("gcc-cross-native-package")
+    set_default(false)
+    set_kind("phony")
+    add_deps("gcc-cross-package")
+    add_deps("binutils-cross-native-build")
+    add_deps("gcc-cross-native-build")
+    if get_config("Libc") == "musl" then
+        add_deps("musl-cross-native-build")
+    else
+        add_deps("glibc-cross-native-build")
+    end
+    on_build(function (target)
+        import("core.project.project")
+        local toolchain_env = project.target("toolchain-env")
+        local package_file =  path.join(toolchain_env:get("toolchain.cross_native.package_dir"), toolchain_env:get("toolchain.cross.target") .. ".tar.gz")
+        if os.exists(package_file) then 
+            print("cross native toolchain has already packaged: ", package_file)
+            return
+        end
+        os.mkdir(toolchain_env:get("toolchain.cross_native.package_dir"))
+        os.cd(toolchain_env:get("toolchain.cross_native.out_dir"))
         local argv = {
             "-czvf",
             package_file,

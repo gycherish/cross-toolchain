@@ -2,11 +2,14 @@ target("gdb-cross-host-build")
     set_default(false)
     set_kind("phony")
     add_deps("binutils-download")
-    add_deps("gmp-cross-host-build")
-    add_deps("mpfr-cross-host-build")
+    add_deps("gmp-native-build")
+    add_deps("mpfr-native-build")
+    add_deps("gcc-cross-final-build")
     on_build(function (target)
         import("core.project.project")
         local toolchain_env = project.target("toolchain-env")
+        local gmp_env = project.target("gmp-env")
+        local mpfr_env = project.target("mpfr-env")
         local binutils_env = project.target("binutils-env")
         if os.exists(binutils_env:get("toolchain.cross.binutils.gdb.host.gdb")) then 
             print("host gdb has already built: ", binutils_env:get("toolchain.cross.binutils.gdb.host.gdb"))
@@ -19,9 +22,9 @@ target("gdb-cross-host-build")
             "--disable-werror",
             "--disable-nls",
             "--disable-multilib",
-            "--with-gmp=" .. toolchain_env:get("toolchain.cross.prefix"),
-            "--with-mpfr=" .. toolchain_env:get("toolchain.cross.prefix"),
-            "--enable-gdb"
+            "--enable-gdb",
+            "--with-gmp=" .. gmp_env:get("toolchain.native.gmp.prefix"),
+            "--with-mpfr=" .. mpfr_env:get("toolchain.native.mpfr.prefix")
         }
         os.vrun("mkdir -p " .. binutils_env:get("toolchain.cross.binutils.gdb.host.build_dir"))
         os.cd(binutils_env:get("toolchain.cross.binutils.gdb.host.build_dir"))
@@ -34,11 +37,14 @@ target("gdb-cross-target-build")
     set_default(false)
     set_kind("phony")
     add_deps("binutils-download")
-    add_deps("gmp-cross-target-build")
-    add_deps("mpfr-cross-target-build")
+    add_deps("gmp-cross-build")
+    add_deps("mpfr-cross-build")
+    add_deps("gcc-cross-final-build")
     on_build(function (target)
         import("core.project.project")
         local toolchain_env = project.target("toolchain-env")
+        local gmp_env = project.target("gmp-env")
+        local mpfr_env = project.target("mpfr-env")
         local binutils_env = project.target("binutils-env")
         if os.exists(binutils_env:get("toolchain.cross.binutils.gdb.target.gdb")) then 
             print("target gdb has already built: ", binutils_env:get("toolchain.cross.binutils.gdb.target.gdb"))
@@ -52,10 +58,10 @@ target("gdb-cross-target-build")
             "--disable-werror",
             "--disable-nls",
             "--disable-multilib",
-            "--with-gmp=" .. path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target")),
-            "--with-mpfr=" .. path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target")),
             "--enable-gdb",
-            "--enable-gdbserver"
+            "--enable-gdbserver",
+            "--with-gmp=" .. gmp_env:get("toolchain.cross.gmp.prefix"),
+            "--with-mpfr=" .. mpfr_env:get("toolchain.cross.mpfr.prefix"),
         }
         os.vrun("mkdir -p " .. binutils_env:get("toolchain.cross.binutils.gdb.target.build_dir"))
         os.cd(binutils_env:get("toolchain.cross.binutils.gdb.target.build_dir"))

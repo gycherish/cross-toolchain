@@ -1,0 +1,12 @@
+diff --git a/gdbsupport/gdb_wait.h b/gdbsupport/gdb_wait.h
+index e9e39584..16d97cca 100644
+--- a/gdbsupport/gdb_wait.h
++++ b/gdbsupport/gdb_wait.h
+@@ -103,6 +103,7 @@ extern int windows_status_to_termsig (unsigned long);
+ # ifdef	W_EXITCODE
+ #define	WSETEXIT(w,status) ((w) = W_EXITCODE(status,0))
+ # else
++#define W_EXITCODE(status, sig) ((status) << 8 | (sig))
+ #define WSETEXIT(w,status) ((w) = (0 | ((status) << 8)))
+ # endif
+ #endif

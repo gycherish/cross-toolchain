@@ -1,0 +1,13 @@
+diff --git a/configure b/configure
+index 670684d8..84d03348 100755
+--- a/configure
++++ b/configure
+@@ -3146,6 +3146,8 @@ fi
+ 
+ if test "$enable_gprofng" = "yes"; then
+   case "${target}" in
++    *-musl*)
++    ;;
+     x86_64-*-linux* | i?86-*-linux* | aarch64-*-linux*)
+     configdirs="$configdirs gprofng"
+     ;;
