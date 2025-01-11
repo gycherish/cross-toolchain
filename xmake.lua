@@ -103,11 +103,6 @@ target("native-toolchain")
     set_kind("phony")
     add_deps("binutils-native-build")
     add_deps("gcc-native-build")
-    if get_config("Libc") == "musl" then
-        add_deps("musl-native-build")
-    else
-        add_deps("glibc-native-build") 
-    end
     if get_config("BuildType") ~= "native" then
         set_enabled(false)
     end
