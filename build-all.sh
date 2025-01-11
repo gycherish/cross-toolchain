@@ -45,7 +45,7 @@ if [ $? -ne 0 ]; then
     exit $?
 fi
 
-xmake f --Libc=glibc --Arch=loongarch64
+xmake f --Libc=glibc --Arch=loongarch64 --BuildType=$BuildType
 xmake -yvD
 if [ $? -ne 0 ]; then
     exit $?
