@@ -275,9 +275,7 @@ target("gcc-cross-native-build")
             "--with-gmp=" .. gmp_env:get("toolchain.cross.gmp.prefix"),
             "--with-isl=" .. isl_env:get("toolchain.cross.isl.prefix"),
             "--with-mpc=" .. mpc_env:get("toolchain.cross.mpc.prefix"),
-            "--with-mpfr=" .. mpfr_env:get("toolchain.cross.mpfr.prefix"),
-            "--with-local-prefix=" .. toolchain_env:get("toolchain.cross_native.prefix"),
-            "--with-native-system-header-dir=" .. path.join(toolchain_env:get("toolchain.cross_native.prefix"), "include")
+            "--with-mpfr=" .. mpfr_env:get("toolchain.cross.mpfr.prefix")
         }
         if get_config("Libc") == "musl" then
             table.insert(argv, "--disable-shared")
