@@ -282,6 +282,8 @@ target("gcc-cross-native-build")
         if get_config("Libc") == "musl" then
             table.insert(argv, "--disable-shared")
             table.insert(argv, "--disable-libsanitizer")
+            table.insert(argv, "--enable-linker-plugin-configure-flags=--with-pic")
+            table.insert(argv, "--enable-linker-plugin-configure-flags=--disable-shared")
         end
         os.vrun("mkdir -p " .. gcc_env:get("toolchain.cross_native.gcc.build_dir"))
         os.cd(gcc_env:get("toolchain.cross_native.gcc.build_dir"))
