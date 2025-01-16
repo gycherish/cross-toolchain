@@ -15,9 +15,9 @@ target("binutils-env")
         target:set("toolchain.cross.binutils.gdb.host.build_dir", path.join(toolchain_env:get("toolchain.cross.build_dir"), "binutils-2.42-gdb-host"))
         target:set("toolchain.cross.binutils.gdb.host.gdb", path.join(toolchain_env:get("toolchain.cross.prefix"), "bin", toolchain_env:get("toolchain.cross.target") .. "-gdb"))
         target:set("toolchain.cross.binutils.gdb.target.build_dir", path.join(toolchain_env:get("toolchain.cross.build_dir"), "binutils-2.42-gdb-target"))
-        target:set("toolchain.cross.binutils.gdb.target.gdb", path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target"), "bin", "gdb"))
+        target:set("toolchain.cross.binutils.gdb.target.gdb", path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target"), "bin", "gdb" .. toolchain_env:get("toolchain.exe.suffix")))
         target:set("toolchain.cross_native.binutils.build_dir", path.join(toolchain_env:get("toolchain.cross_native.build_dir"), "binutils-2.42"))
-        target:set("toolchain.cross_native.binutils.ld", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "bin", "ld"))
+        target:set("toolchain.cross_native.binutils.ld", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "bin", "ld" .. toolchain_env:get("toolchain.exe.suffix")))
 
         import("core.base.option")
         if option.get("verbose") then

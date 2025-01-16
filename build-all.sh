@@ -3,6 +3,18 @@ if [ "$1" = "cross-native" ]; then
     BuildType=cross-native
 fi
 
+xmake f --Libc=mingw --Arch=i686 --BuildType=$BuildType
+xmake -yvD
+if [ $? -ne 0 ]; then
+    exit $?
+fi
+
+xmake f --Libc=mingw --Arch=x86_64 --BuildType=$BuildType
+xmake -yvD
+if [ $? -ne 0 ]; then
+    exit $?
+fi
+
 xmake f --Libc=musl --Arch=i686 --BuildType=$BuildType
 xmake -yvD
 if [ $? -ne 0 ]; then

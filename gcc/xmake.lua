@@ -12,29 +12,49 @@ target("gcc-env")
         target:set("toolchain.native.gcc.cc", path.join(toolchain_env:get("toolchain.native.prefix"), "bin", "gcc"))
         target:set("toolchain.cross.gcc.build_bootstrap_dir", path.join(toolchain_env:get("toolchain.cross.build_dir"), "gcc-14-bootstrap"))
         target:set("toolchain.cross.gcc.build_final_dir", path.join(toolchain_env:get("toolchain.cross.build_dir"), "gcc-14-final"))
-        target:set("toolchain.cross.gcc.build_final_flag", path.join(target:get("toolchain.cross.gcc.build_final_dir"), "gcc-installed"))
+        target:set("toolchain.cross.gcc.final_install_flag", path.join(target:get("toolchain.cross.gcc.build_final_dir"), "gcc-installed"))
         local bin_prefix = path.join(toolchain_env:get("toolchain.cross.prefix"), "bin", toolchain_env:get("toolchain.cross.target") .. "-")
         target:set("toolchain.cross.gcc.cc", bin_prefix .. "gcc")
         target:set("toolchain.cross.gcc.cpp", bin_prefix .. "cpp")
         target:set("toolchain.cross.gcc.cxx", bin_prefix .. "g++")
         target:set("toolchain.cross_native.gcc.build_dir", path.join(toolchain_env:get("toolchain.cross_native.build_dir"), "gcc-14"))
-        target:set("toolchain.cross_native.gcc.cc", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "bin", "gcc"))
+        target:set("toolchain.cross_native.gcc.cc", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "bin", "gcc" .. toolchain_env:get("toolchain.exe.suffix")))
+        target:set("toolchain.cross_native.gcc.cc1_dir", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "libexec", "gcc", toolchain_env:get("toolchain.cross.target"), "14"))
+
+        local extra_configure = {}
+        if get_config("Libc") == "musl" then
+            extra_configure = table.join(extra_configure, {
+                "--disable-shared",
+                "--disable-libsanitizer",
+                "--enable-linker-plugin-configure-flags=--with-pic",
+                "--enable-linker-plugin-configure-flags=--disable-shared",
+            })
+        end
+        if get_config("Libc") == "mingw" and get_config("Arch") == "i686" then
+            extra_configure = table.join(extra_configure, {
+                "--disable-sjlj-exceptions",
+                "--with-dwarf2",
+            })
+        end
+        target:set("toolchain.gcc.extra_configure", extra_configure)
 
         import("core.base.option")
         if option.get("verbose") then
             print("toolchain.gcc.url: ", target:get("toolchain.gcc.url"))
             print("toolchain.gcc.branch: ", target:get("toolchain.gcc.branch"))
             print("toolchain.gcc.source_dir: ", target:get("toolchain.gcc.source_dir"))
+            print("toolchain.gcc.extra_configure: ", target:get("toolchain.gcc.extra_configure"))
             print("toolchain.native.gcc.build_dir: ", target:get("toolchain.native.gcc.build_dir"))
             print("toolchain.native.gcc.cc: ", target:get("toolchain.native.gcc.cc"))
             print("toolchain.cross.gcc.build_bootstrap_dir: ", target:get("toolchain.cross.gcc.build_bootstrap_dir"))
             print("toolchain.cross.gcc.build_final_dir: ", target:get("toolchain.cross.gcc.build_final_dir"))
-            print("toolchain.cross.gcc.build_final_flag: ", target:get("toolchain.cross.gcc.build_final_flag"))
+            print("toolchain.cross.gcc.final_install_flag: ", target:get("toolchain.cross.gcc.final_install_flag"))
             print("toolchain.cross.gcc.cc: ", target:get("toolchain.cross.gcc.cc"))
             print("toolchain.cross.gcc.cpp: ", target:get("toolchain.cross.gcc.cpp"))
             print("toolchain.cross.gcc.cxx: ", target:get("toolchain.cross.gcc.cxx"))
             print("toolchain.cross_native.gcc.build_dir: ", target:get("toolchain.cross_native.gcc.build_dir"))
             print("toolchain.cross_native.gcc.cc: ", target:get("toolchain.cross_native.gcc.cc"))
+            print("toolchain.cross_native.gcc.cc1_dir: ", target:get("toolchain.cross_native.gcc.cc1_dir"))
         end
     end)
 
@@ -151,12 +171,14 @@ target("gcc-cross-bootstrap-build")
             "--disable-libssp",
             "--disable-libvtv",
             "--disable-libstdcxx",
+            "--with-gcc-major-version-only",
             "--with-pic",
             "--with-gmp=" .. gmp_env:get("toolchain.native.gmp.prefix"),
             "--with-isl=" .. isl_env:get("toolchain.native.isl.prefix"),
             "--with-mpc=" .. mpc_env:get("toolchain.native.mpc.prefix"),
             "--with-mpfr=" .. mpfr_env:get("toolchain.native.mpfr.prefix")
         }
+        argv = table.join(argv, gcc_env:get("toolchain.gcc.extra_configure"))
         os.vrun("mkdir -p " .. gcc_env:get("toolchain.cross.gcc.build_bootstrap_dir"))
         os.cd(gcc_env:get("toolchain.cross.gcc.build_bootstrap_dir"))
         os.vrunv(path.join(gcc_env:get("toolchain.gcc.source_dir"), "configure"), argv)
@@ -174,8 +196,11 @@ target("gcc-cross-final-build")
     add_deps("gcc-cross-bootstrap-build")
     if get_config("Libc") == "musl" then
         add_deps("musl-cross-build")
+    elseif get_config("Libc") == "mingw" then
+        add_deps("mingw-cross-winpthread-build")
+        add_deps("mingw-cross-crt-build")
     else
-        add_deps("glibc-cross-build") 
+        add_deps("glibc-cross-build")
     end
     on_build(function (target)
         import("core.project.project")
@@ -185,7 +210,7 @@ target("gcc-cross-final-build")
         local mpc_env = project.target("mpc-env")
         local mpfr_env = project.target("mpfr-env")
         local gcc_env = project.target("gcc-env")
-        if os.exists(gcc_env:get("toolchain.cross.gcc.build_final_flag")) then 
+        if os.exists(gcc_env:get("toolchain.cross.gcc.final_install_flag")) then 
             print("cross final gcc has already built: ", gcc_env:get("toolchain.cross.gcc.cc"))
             return
         end
@@ -195,26 +220,26 @@ target("gcc-cross-final-build")
             "--with-headers=" .. path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target"), "include"),
             "--enable-languages=c,c++",
             "--enable-threads=posix",
+            "--enable-ssp",
+            "--enable-lto",
             "--disable-bootstrap",
             "--disable-werror",
             "--disable-nls",
             "--disable-multilib",
+            "--with-gcc-major-version-only",
             "--with-pic",
             "--with-gmp=" .. gmp_env:get("toolchain.native.gmp.prefix"),
             "--with-isl=" .. isl_env:get("toolchain.native.isl.prefix"),
             "--with-mpc=" .. mpc_env:get("toolchain.native.mpc.prefix"),
             "--with-mpfr=" .. mpfr_env:get("toolchain.native.mpfr.prefix")
         }
-        if get_config("Libc") == "musl" then
-            table.insert(argv, "--disable-shared")
-            table.insert(argv, "--disable-libsanitizer")
-        end
+        argv = table.join(argv, gcc_env:get("toolchain.gcc.extra_configure"))
         os.vrun("mkdir -p " .. gcc_env:get("toolchain.cross.gcc.build_final_dir"))
         os.cd(gcc_env:get("toolchain.cross.gcc.build_final_dir"))
         os.vrunv(gcc_env:get("toolchain.gcc.source_dir") .. "/configure", argv)
         os.exec("make -j")
         os.exec("make install-strip -j")
-        io.open(gcc_env:get("toolchain.cross.gcc.build_final_flag"), "w")
+        io.open(gcc_env:get("toolchain.cross.gcc.final_install_flag"), "w")
     end)
 
 target("gcc-cross-package")
@@ -267,22 +292,20 @@ target("gcc-cross-native-build")
             "--target=" .. toolchain_env:get("toolchain.cross.target"),
             "--enable-languages=c,c++",
             "--enable-threads=posix",
+            "--enable-ssp",
+            "--enable-lto",
             "--disable-bootstrap",
             "--disable-werror",
             "--disable-nls",
             "--disable-multilib",
+            "--with-gcc-major-version-only",
             "--with-pic",
             "--with-gmp=" .. gmp_env:get("toolchain.cross.gmp.prefix"),
             "--with-isl=" .. isl_env:get("toolchain.cross.isl.prefix"),
             "--with-mpc=" .. mpc_env:get("toolchain.cross.mpc.prefix"),
             "--with-mpfr=" .. mpfr_env:get("toolchain.cross.mpfr.prefix")
         }
-        if get_config("Libc") == "musl" then
-            table.insert(argv, "--disable-shared")
-            table.insert(argv, "--disable-libsanitizer")
-            table.insert(argv, "--enable-linker-plugin-configure-flags=--with-pic")
-            table.insert(argv, "--enable-linker-plugin-configure-flags=--disable-shared")
-        end
+        argv = table.join(argv, gcc_env:get("toolchain.gcc.extra_configure"))
         os.vrun("mkdir -p " .. gcc_env:get("toolchain.cross_native.gcc.build_dir"))
         os.cd(gcc_env:get("toolchain.cross_native.gcc.build_dir"))
         os.vrunv(gcc_env:get("toolchain.gcc.source_dir") .. "/configure", argv)
@@ -298,16 +321,26 @@ target("gcc-cross-native-package")
     add_deps("gcc-cross-native-build")
     if get_config("Libc") == "musl" then
         add_deps("musl-cross-native-build")
+    elseif get_config("Libc") == "mingw" then
+        add_deps("mingw-cross-native-build")
     else
         add_deps("glibc-cross-native-build")
     end
     on_build(function (target)
         import("core.project.project")
         local toolchain_env = project.target("toolchain-env")
+        local gcc_env = project.target("gcc-env")
+        local mingw_env = project.target("mingw-env")
         local package_file =  path.join(toolchain_env:get("toolchain.cross_native.package_dir"), toolchain_env:get("toolchain.cross.target") .. ".tar.gz")
         if os.exists(package_file) then 
             print("cross native toolchain has already packaged: ", package_file)
             return
+        end
+        if get_config("Libc") == "mingw" then
+            local cc1_winpthread = path.join(gcc_env:get("toolchain.cross_native.gcc.cc1_dir"), mingw_env:get("toolchain.mingw.winpthread.dll_name"))
+            os.cp(mingw_env:get("toolchain.cross_native.mingw.winpthread_dll"), cc1_winpthread)
+            local as_winpthread = path.join(toolchain_env:get("toolchain.cross_native.prefix"), toolchain_env:get("toolchain.cross.target"), "bin", mingw_env:get("toolchain.mingw.winpthread.dll_name"))
+            os.cp(mingw_env:get("toolchain.cross_native.mingw.winpthread_dll"), as_winpthread)
         end
         os.mkdir(toolchain_env:get("toolchain.cross_native.package_dir"))
         os.cd(toolchain_env:get("toolchain.cross_native.out_dir"))
