@@ -13,7 +13,7 @@ target("jemalloc-env")
         target:set("toolchain.cross.jemalloc.lib", path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target"), "lib", "libjemalloc.a"))
         target:set("toolchain.cross_native.jemalloc.build_dir", path.join(toolchain_env:get("toolchain.cross_native.build_dir"), "jemalloc"))
         target:set("toolchain.cross_native.jemalloc.build_lib", path.join(target:get("toolchain.cross_native.jemalloc.build_dir"), "lib", "libjemalloc_pic.a"))
-        target:set("toolchain.cross_native.jemalloc.lib", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "lib", "libjemalloc.a"))
+        target:set("toolchain.cross_native.jemalloc.lib", path.join(toolchain_env:get("toolchain.cross_native.sysroot.usr"), "lib", "libjemalloc.a"))
         import("core.base.option")
         if option.get("verbose") then
             print("toolchain.jemalloc.url: ", target:get("toolchain.jemalloc.url"))
@@ -91,6 +91,7 @@ target("jemalloc-cross-native-build")
     set_kind("phony")
     add_deps("gcc-cross-final-build")
     add_deps("linux-cross-native-header-install")
+    add_deps("musl-cross-native-build")
     if get_config("Libc") ~= "musl" then
         set_enabled(false)
     end
@@ -99,12 +100,12 @@ target("jemalloc-cross-native-build")
         local toolchain_env = project.target("toolchain-env")
         local gcc_env = project.target("gcc-env")
         local jemalloc_env = project.target("jemalloc-env")
-        if os.exists(jemalloc_env:get("toolchain.cross_native.jemalloc.libpic")) then
-            print("cross native jemalloc has already built: ", jemalloc_env:get("toolchain.cross_native.jemalloc.libpic"))
+        if os.exists(jemalloc_env:get("toolchain.cross_native.jemalloc.lib")) then
+            print("cross native jemalloc has already built: ", jemalloc_env:get("toolchain.cross_native.jemalloc.lib"))
             return
         end
         local argv = {
-            "--prefix=" .. toolchain_env:get("toolchain.cross_native.prefix"),
+            "--prefix=" .. toolchain_env:get("toolchain.cross_native.sysroot.usr"),
             "--host=" .. toolchain_env:get("toolchain.cross.target"),
             "--enable-static",
             "--disable-shared",
@@ -116,5 +117,7 @@ target("jemalloc-cross-native-build")
         os.cd(jemalloc_env:get("toolchain.cross_native.jemalloc.build_dir"))
         os.vrunv(path.join(jemalloc_env:get("toolchain.jemalloc.source_dir"), "configure"), argv)
         os.exec("make -j")
+        os.exec(gcc_env:get("toolchain.cross.gcc.strip") .. " --strip-debug " .. jemalloc_env:get("toolchain.cross_native.jemalloc.build_lib"))
+        os.exec(gcc_env:get("toolchain.cross.gcc.ranlib") .. " " .. jemalloc_env:get("toolchain.cross_native.jemalloc.build_lib"))
         os.cp(jemalloc_env:get("toolchain.cross_native.jemalloc.build_lib"), jemalloc_env:get("toolchain.cross_native.jemalloc.lib"))
     end)

@@ -13,7 +13,7 @@ target("musl-env")
         target:set("toolchain.cross.musl.build_dir", path.join(toolchain_env:get("toolchain.cross.build_dir"), "musl-1.2.5"))
         target:set("toolchain.cross.musl.libc", path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target"), "lib", "libc.a"))
         target:set("toolchain.cross_native.musl.build_dir", path.join(toolchain_env:get("toolchain.cross_native.build_dir"), "musl-1.2.5"))
-        target:set("toolchain.cross_native.musl.libc", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "lib", "libc.a"))
+        target:set("toolchain.cross_native.musl.libc", path.join(toolchain_env:get("toolchain.cross_native.sysroot.usr"), "lib", "libc.a"))
 
         import("core.base.option")
         if option.get("verbose") then
@@ -116,7 +116,7 @@ target("musl-cross-native-build")
             return
         end
         local argv = {
-            "--prefix=" .. toolchain_env:get("toolchain.cross_native.prefix"),
+            "--prefix=" .. toolchain_env:get("toolchain.cross_native.sysroot.usr"),
             "--host=" .. toolchain_env:get("toolchain.cross.target"),
             "--disable-shared",
             "CFLAGS=" .. "-fPIC",

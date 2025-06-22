@@ -300,6 +300,7 @@ target("gcc-cross-native-build")
         end
         local argv = {
             "--prefix=" .. toolchain_env:get("toolchain.cross_native.prefix"),
+            "--with-sysroot=" .. toolchain_env:get("toolchain.cross_native.sysroot"),
             "--host=" .. toolchain_env:get("toolchain.cross.target"),
             "--target=" .. toolchain_env:get("toolchain.cross.target"),
             "--enable-languages=c,c++",
@@ -333,6 +334,7 @@ target("gcc-cross-native-package")
     add_deps("binutils-cross-native-build")
     add_deps("gcc-cross-native-build")
     if get_config("Libc") == "musl" then
+        add_deps("jemalloc-cross-native-build")
         add_deps("musl-cross-native-build")
     elseif get_config("Libc") == "mingw" then
         add_deps("mingw-cross-native-build")

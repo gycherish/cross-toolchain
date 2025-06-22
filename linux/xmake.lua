@@ -14,7 +14,7 @@ target("linux-env")
         local arch = get_config("Arch")
         arch = arch:gsub("i%d+86", "x86"):gsub("aarch", "arm"):gsub("loongarch64", "loongarch")
         target:set("toolchain.cross.linux.arch", arch)
-        target:set("toolchain.cross_native.linux.install_dir", toolchain_env:get("toolchain.cross_native.prefix"))
+        target:set("toolchain.cross_native.linux.install_dir", toolchain_env:get("toolchain.cross_native.sysroot.usr"))
         target:set("toolchain.cross_native.linux.install_header_dir", path.join(target:get("toolchain.cross_native.linux.install_dir"), "include", "linux"))
 
         import("core.base.option")

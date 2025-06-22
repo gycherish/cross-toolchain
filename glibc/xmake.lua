@@ -13,7 +13,7 @@ target("glibc-env")
         target:set("toolchain.cross.glibc.build_dir", path.join(toolchain_env:get("toolchain.cross.build_dir"), "glibc-2.38"))
         target:set("toolchain.cross.glibc.libc", path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target"), "lib", "libc.so"))
         target:set("toolchain.cross_native.glibc.build_dir", path.join(toolchain_env:get("toolchain.cross_native.build_dir"), "glibc-2.38"))
-        target:set("toolchain.cross_native.glibc.libc", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "lib", "libc.so"))
+        target:set("toolchain.cross_native.glibc.libc", path.join(toolchain_env:get("toolchain.cross_native.sysroot.usr"), "lib", "libc.so"))
 
         import("core.base.option")
         if option.get("verbose") then
@@ -130,7 +130,7 @@ target("glibc-cross-native-build")
             return
         end
         local argv = {
-            "--prefix=" .. toolchain_env:get("toolchain.cross_native.prefix"),
+            "--prefix=" .. toolchain_env:get("toolchain.cross_native.sysroot.usr"),
             "--host=" .. toolchain_env:get("toolchain.cross.target"),
             "--disable-bootstrap",
             "--disable-werror",
