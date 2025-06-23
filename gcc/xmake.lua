@@ -20,6 +20,7 @@ target("gcc-env")
         target:set("toolchain.cross.gcc.ranlib", bin_prefix .. "ranlib")
         target:set("toolchain.cross.gcc.strip", bin_prefix .. "strip")
         target:set("toolchain.cross_native.gcc.build_dir", path.join(toolchain_env:get("toolchain.cross_native.build_dir"), "gcc-14"))
+        target:set("toolchain.cross_native.gcc.cc0", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "bin", "cc" .. toolchain_env:get("toolchain.exe.suffix"))) -- cc for backwards compatibility
         target:set("toolchain.cross_native.gcc.cc", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "bin", "gcc" .. toolchain_env:get("toolchain.exe.suffix")))
         target:set("toolchain.cross_native.gcc.cc1_dir", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "libexec", "gcc", toolchain_env:get("toolchain.cross.target"), "14"))
 
@@ -63,6 +64,7 @@ target("gcc-env")
             print("toolchain.cross.gcc.ranlib: ", target:get("toolchain.cross.gcc.ranlib"))
             print("toolchain.cross.gcc.strip: ", target:get("toolchain.cross.gcc.strip"))
             print("toolchain.cross_native.gcc.build_dir: ", target:get("toolchain.cross_native.gcc.build_dir"))
+            print("toolchain.cross_native.gcc.cc0: ", target:get("toolchain.cross_native.gcc.cc0"))
             print("toolchain.cross_native.gcc.cc: ", target:get("toolchain.cross_native.gcc.cc"))
             print("toolchain.cross_native.gcc.cc1_dir: ", target:get("toolchain.cross_native.gcc.cc1_dir"))
         end
@@ -325,6 +327,7 @@ target("gcc-cross-native-build")
         os.vrunv(gcc_env:get("toolchain.gcc.source_dir") .. "/configure", argv)
         os.exec("make -j")
         os.exec("make install-strip -j")
+        os.cp(gcc_env:get("toolchain.cross_native.gcc.cc"), gcc_env:get("toolchain.cross_native.gcc.cc0"))
     end)
 
 target("gcc-cross-native-package")
