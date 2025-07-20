@@ -1,0 +1,105 @@
+{
+    "package": [
+        {
+            "name": "binutils",
+            "home": "https://www.gnu.org/software/binutils/",
+            "version": "2.42",
+            "dirname": "binutils-2.42",
+            "url": "https://ftp.gnu.org/gnu/binutils/binutils-2.42.tar.gz",
+            "patches": [
+                "binutils-add-W_EXITCODE-macro-for-non-glibc-systems.patch",
+                "binutils-disable-gprofng-for-musl.patch"
+            ]
+        },
+        {
+            "name": "config",
+            "home": "https://www.gnu.org/software/config/",
+            "version": "master",
+            "dirname": "config-master",
+            "url": "https://git.savannah.gnu.org/git/config.git",
+            "patches": []
+        },
+        {
+            "name": "gcc",
+            "home": "https://gcc.gnu.org/",
+            "version": "14.2.0",
+            "dirname": "gcc-14.2.0",
+            "url": "https://ftp.gnu.org/gnu/gcc/gcc-14.2.0/gcc-14.2.0.tar.gz",
+            "patches": [
+                "gcc-libstdc++-no-fpic.patch"
+            ]
+        },
+        {
+            "name": "glibc",
+            "home": "https://www.gnu.org/software/libc/",
+            "version": "2.38",
+            "dirname": "glibc-2.38",
+            "url": "https://ftp.gnu.org/gnu/libc/glibc-2.38.tar.gz",
+            "patches": []
+        },
+        {
+            "name": "gmp",
+            "home": "https://gmplib.org/",
+            "version": "6.3.0",
+            "dirname": "gmp-6.3.0",
+            "url": "https://ftp.gnu.org/gnu/gmp/gmp-6.3.0.tar.gz",
+            "patches": []
+        },
+        {
+            "name": "isl",
+            "home": "https://libisl.sourceforge.io/",
+            "version": "0.27",
+            "dirname": "isl-0.27",
+            "url": "https://libisl.sourceforge.io/isl-0.27.tar.gz",
+            "patches": []
+        },
+        {
+            "name": "jemalloc",
+            "home": "https://jemalloc.net/",
+            "version": "master",
+            "dirname": "jemalloc-master",
+            "url": "https://github.com/jemalloc/jemalloc.git",
+            "patches": []
+        },
+        {
+            "name": "linux",
+            "home": "https://www.kernel.org/",
+            "version": "6.11",
+            "dirname": "linux-6.11",
+            "url": "https://cdn.kernel.org/pub/linux/kernel/v6.x/linux-6.11.tar.gz",
+            "patches": []
+        },
+        {
+            "name": "mingw",
+            "home": "https://mingw-w64.org/",
+            "version": "12.0.0",
+            "dirname": "mingw-w64-v12.0.0",
+            "url": "https://sourceforge.net/projects/mingw-w64/files/mingw-w64/mingw-w64-release/mingw-w64-v12.0.0.tar.bz2",
+            "patches": []
+        },
+        {
+            "name": "mpc",
+            "home": "https://www.multiprecision.org/",
+            "version": "1.3.1",
+            "dirname": "mpc-1.3.1",
+            "url": "https://ftp.gnu.org/gnu/mpc/mpc-1.3.1.tar.gz",
+            "patches": []
+        },
+        {
+            "name": "mpfr",
+            "home": "https://www.mpfr.org/",
+            "version": "4.2.0",
+            "dirname": "mpfr-4.2.0",
+            "url": "https://www.mpfr.org/mpfr-4.2.0/mpfr-4.2.0.tar.gz",
+            "patches": []
+        },
+        {
+            "name": "musl",
+            "home": "https://musl.libc.org/",
+            "version": "1.2.5",
+            "dirname": "musl-1.2.5",
+            "url": "https://musl.libc.org/releases/musl-1.2.5.tar.gz",
+            "patches": []
+        }
+    ]
+}

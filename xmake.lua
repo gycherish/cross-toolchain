@@ -4,6 +4,7 @@ set_version("0.1.0")
 
 set_warnings("all", "error")
 set_allowedplats("linux")
+add_moduledirs("xmake")
 
 option("Libc")
     set_default("musl")
@@ -55,13 +56,26 @@ target("check-cfg")
         end
     end)
 
+target("toolchain-package-env")
+    set_default(false)
+    set_kind("phony")
+    on_build(function (target)
+        import("core.base.json")
+        local json_table = json.loadfile("package.json")
+        local packages = json_table["package"]
+        for _, package in pairs(packages) do
+            -- target:set("toolchain.source." .. package.name, package) -- why this doesn't work ???
+            target:set("toolchain.source." .. package.name, { package })
+        end
+    end)
+
 target("toolchain-env")
     set_default(false)
     set_kind("phony")
     add_deps("check-cfg")
+    add_deps("toolchain-package-env")
     on_build(function (target)
         target:set("toolchain.source_dir", "$(projectdir)/source")
-        target:set("toolchain.patch_dir", "$(projectdir)/patches")
         target:set("toolchain.exe.suffix", "")
         if get_config("Libc") == "musl" then
             target:set("toolchain.cross.target", "$(Arch)-$(Vendor)-linux-musl")
@@ -88,7 +102,6 @@ target("toolchain-env")
         import("core.base.option")
         if option.get("verbose") then
             print("toolchain.source_dir: ", target:get("toolchain.source_dir"))
-            print("toolchain.patch_dir: ", target:get("toolchain.patch_dir"))
             print("toolchain.native.out_dir: ", target:get("toolchain.native.out_dir"))
             print("toolchain.native.prefix: ", target:get("toolchain.native.prefix"))
             print("toolchain.native.build_dir: ", target:get("toolchain.native.build_dir"))

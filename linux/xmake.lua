@@ -5,10 +5,10 @@ target("linux-env")
     on_build(function (target) 
         import("core.project.project")
         local toolchain_env = project.target("toolchain-env")
-        target:set("toolchain.linux.url", "https://github.com/torvalds/linux.git")
-        target:set("toolchain.linux.branch", "v6.11")
-        target:set("toolchain.linux.version", "6.11")
-        target:set("toolchain.linux.source_dir", path.join(toolchain_env:get("toolchain.source_dir"), "linux-6.11"))
+        local package_env = project.target("toolchain-package-env")
+        local package_info = package_env:get("toolchain.source.linux")
+        target:set("toolchain.linux.version", package_info.version)
+        target:set("toolchain.linux.source_dir", path.join(toolchain_env:get("toolchain.source_dir"), package_info.dirname))
         target:set("toolchain.cross.linux.install_dir", path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target")))
         target:set("toolchain.cross.linux.install_header_dir", path.join(target:get("toolchain.cross.linux.install_dir"), "include", "linux"))
         local arch = get_config("Arch")
@@ -19,8 +19,7 @@ target("linux-env")
 
         import("core.base.option")
         if option.get("verbose") then
-            print("toolchain.linux.url: ", target:get("toolchain.linux.url"))
-            print("toolchain.linux.branch: ", target:get("toolchain.linux.branch"))
+            print("toolchain.source.linux: ", package_info)
             print("toolchain.linux.version: ", target:get("toolchain.linux.version"))
             print("toolchain.linux.source_dir: ", target:get("toolchain.linux.source_dir"))
             print("toolchain.cross.linux.arch: ", target:get("toolchain.cross.linux.arch"))
@@ -36,18 +35,12 @@ target("linux-download")
     set_kind("phony")
     add_deps("linux-env")
     on_build(function (target)
-        import("devel.git")
         import("core.project.project")
-        local linux_env = project.target("linux-env")
-        if os.exists(linux_env:get("toolchain.linux.source_dir")) then
-            print("linux kernel source code has already existed: ", linux_env:get("toolchain.linux.source_dir"))
-            return
-        end
-        git.clone(linux_env:get("toolchain.linux.url"), {
-            depth = 1, 
-            branch = linux_env:get("toolchain.linux.branch"), 
-            outputdir = linux_env:get("toolchain.linux.source_dir")
-        })
+        import("package")
+        local toolchain_env = project.target("toolchain-env")
+        local package_env = project.target("toolchain-package-env")
+        package.download(package_env:get("toolchain.source.linux"), toolchain_env:get("toolchain.source_dir"))
+        package.patch(package_env:get("toolchain.source.linux"), toolchain_env:get("toolchain.source_dir"))
     end)
 
 target("linux-cross-header-install")
