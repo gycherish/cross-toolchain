@@ -79,25 +79,21 @@ target("gcc-download")
         import("package")
         local toolchain_env = project.target("toolchain-env")
         local package_env = project.target("toolchain-package-env")
+        local gcc_env = project.target("gcc-env")
         package.download(package_env:get("toolchain.source.gcc"), toolchain_env:get("toolchain.source_dir"))
         package.patch(package_env:get("toolchain.source.gcc"), toolchain_env:get("toolchain.source_dir"))
-    end)
-
-target("gcc-download-prerequisites")
-    set_default(false)
-    set_kind("phony")
-    add_deps("gcc-download")
-    on_build(function (target)
-        import("core.project.project")
-        local gcc_env = project.target("gcc-env")
+        local gettext_package = package_env:get("toolchain.source.gettext")
+        package.download(gettext_package, toolchain_env:get("toolchain.source_dir"))
         os.cd(gcc_env:get("toolchain.gcc.source_dir"))
-        os.exec("./contrib/download_prerequisites --only-gettext")
+        if not os.exists(gettext_package.name) then
+            os.exec("ln -fs " .. path.join(toolchain_env:get("toolchain.source_dir"), gettext_package.dirname)  .. " " .. gettext_package.name)
+        end
     end)
 
 target("gcc-native-build")
     set_default(false)
     set_kind("phony")
-    add_deps("gcc-download-prerequisites")
+    add_deps("gcc-download")
     add_deps("gmp-native-build")
     add_deps("isl-native-build")
     add_deps("mpc-native-build")
@@ -138,7 +134,7 @@ target("gcc-native-build")
 target("gcc-cross-bootstrap-build")
     set_default(false)
     set_kind("phony")
-    add_deps("gcc-download-prerequisites")
+    add_deps("gcc-download")
     add_deps("gmp-native-build")
     add_deps("isl-native-build")
     add_deps("mpc-native-build")
@@ -256,7 +252,7 @@ target("gcc-cross-package")
     on_build(function (target)
         import("core.project.project")
         local toolchain_env = project.target("toolchain-env")
-        local package_file =  path.join(toolchain_env:get("toolchain.cross.package_dir"), toolchain_env:get("toolchain.cross.target") .. ".tar.gz")
+        local package_file =  path.join(toolchain_env:get("toolchain.cross.package_dir"), toolchain_env:get("toolchain.name") .. ".tar.gz")
         if os.exists(package_file) then 
             print("cross toolchain has already packaged: ", package_file)
             return
@@ -266,7 +262,7 @@ target("gcc-cross-package")
         local argv = {
             "-czvf",
             package_file,
-            toolchain_env:get("toolchain.cross.target")
+            toolchain_env:get("toolchain.name")
         }
         os.execv("tar", argv)
     end)
@@ -340,7 +336,7 @@ target("gcc-cross-native-package")
         local toolchain_env = project.target("toolchain-env")
         local gcc_env = project.target("gcc-env")
         local mingw_env = project.target("mingw-env")
-        local package_file =  path.join(toolchain_env:get("toolchain.cross_native.package_dir"), toolchain_env:get("toolchain.cross.target") .. ".tar.gz")
+        local package_file =  path.join(toolchain_env:get("toolchain.cross_native.package_dir"), toolchain_env:get("toolchain.name") .. ".tar.gz")
         if os.exists(package_file) then 
             print("cross native toolchain has already packaged: ", package_file)
             return
@@ -356,7 +352,7 @@ target("gcc-cross-native-package")
         local argv = {
             "-czvf",
             package_file,
-            toolchain_env:get("toolchain.cross.target")
+            toolchain_env:get("toolchain.name")
         }
         os.execv("tar", argv)
     end)
