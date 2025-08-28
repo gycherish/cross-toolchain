@@ -18,7 +18,7 @@ function download(package, out_dir)
         end
         git.clone(package.url, {
             depth = 1, 
-            branch = version,
+            branch = package.branch,
             outputdir = package_dir
         })
     else
