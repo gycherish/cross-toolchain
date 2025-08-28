@@ -38,23 +38,23 @@ xmake f --Libc=musl --Arch=x86_64 --BuildType=cross-native
 xmake -yvD
 ```
 
-假设使用的 gcc 版本为 15.2.0，则以上命令执行完后将在项目根目录下生成最终的工具链：
-- package/cross/x86_64-xmake-linux-musl-gcc15.2.0.tar.gz: 运行在宿主平台，能够生成目标平台为 x86_64-xmake-linux 的二进制的交叉工具链
-- package/cross-native/x86_64-xmake-linux-musl-gcc15.2.0.tar.gz: 运行在 x86_64-xmake-linux 平台，能够生成目标平台为 x86_64-xmake-linux 二进制的本地工具链
+假设使用的 gcc 版本为 14.2.0，则以上命令执行完后将在项目根目录下生成最终的工具链：
+- package/cross/x86_64-xmake-linux-musl-gcc14.2.0.tar.gz: 运行在宿主平台，能够生成目标平台为 x86_64-xmake-linux 的二进制的交叉工具链
+- package/cross-native/x86_64-xmake-linux-musl-gcc14.2.0.tar.gz: 运行在 x86_64-xmake-linux 平台，能够生成目标平台为 x86_64-xmake-linux 二进制的本地工具链
 
 ## 使用
 以使用 XMake 作为构建系统说明使用方法。
 
 ### 使用交叉工具链
-将上文的交叉工具链解压到指定目录，如 /opt/toolchain/cross/x86_64-xmake-linux-musl-gcc15.2.0，则可以使用以下命令编译项目代码：
+将上文的交叉工具链解压到指定目录，如 /opt/toolchain/cross/x86_64-xmake-linux-musl-gcc14.2.0，则可以使用以下命令编译项目代码：
 ```bash
-xmake f -p linux --toolchain=cross --sdk=/opt/toolchain/cross/x86_64-xmake-linux-musl-gcc15.2.0 -yvD
+xmake f -p linux --toolchain=cross --sdk=/opt/toolchain/cross/x86_64-xmake-linux-musl-gcc14.2.0 -yvD
 ```
 
 ### 使用本地工具链
-由于 Musl Libc 使用了静态链接，理论上上文中的本地工具链可以拷贝到任何 CPU 架构是 X86_64 的 [Linux](https://wiki.musl-libc.org/supported-platforms) 平台上运行，假设其解压后的目录为 /opt/toolchain/native/x86_64-xmake-linux-musl-gcc15.2.0，则只需要将其加入 PATH 环境变量中即可像使用系统自带的工具链那样去使用了：
+由于 Musl Libc 使用了静态链接，理论上上文中的本地工具链可以拷贝到任何 CPU 架构是 X86_64 的 [Linux](https://wiki.musl-libc.org/supported-platforms) 平台上运行，假设其解压后的目录为 /opt/toolchain/native/x86_64-xmake-linux-musl-gcc14.2.0，则只需要将其加入 PATH 环境变量中即可像使用系统自带的工具链那样去使用了：
 ```bash
-export PATH=/opt/toolchain/native/x86_64-xmake-linux-musl-gcc15.2.0/bin:$PATH
+export PATH=/opt/toolchain/native/x86_64-xmake-linux-musl-gcc14.2.0/bin:$PATH
 ```
 
 ### 性能优化

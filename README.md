@@ -40,23 +40,23 @@ xmake f --Libc=musl --Arch=x86_64 --BuildType=cross-native
 xmake -yvD
 ```
 
-Assuming the gcc version is 15.2.0, after executing the above commands, the final toolchain will be generated in the project root directory:
-- package/cross/x86_64-xmake-linux-musl-gcc15.2.0.tar.gz: Runs on the host platform and can generate binaries for the x86_64-xmake-linux target platform as a cross toolchain.
-- package/cross-native/x86_64-xmake-linux-musl-gcc15.2.0.tar.gz: Runs on the x86_64-xmake-linux platform and can generate binaries for the x86_64-xmake-linux target as a native toolchain.
+Assuming the gcc version is 14.2.0, after executing the above commands, the final toolchain will be generated in the project root directory:
+- package/cross/x86_64-xmake-linux-musl-gcc14.2.0.tar.gz: Runs on the host platform and can generate binaries for the x86_64-xmake-linux target platform as a cross toolchain.
+- package/cross-native/x86_64-xmake-linux-musl-gcc14.2.0.tar.gz: Runs on the x86_64-xmake-linux platform and can generate binaries for the x86_64-xmake-linux target as a native toolchain.
 
 ## Usage
 Instructions for using XMake as the build system.
 
 ### Using the Cross Toolchain
-Extract the cross toolchain mentioned above to a specified directory, such as /opt/toolchain/cross/x86_64-xmake-linux-musl-gcc15.2.0, then use the following command to compile your project:
+Extract the cross toolchain mentioned above to a specified directory, such as /opt/toolchain/cross/x86_64-xmake-linux-musl-gcc14.2.0, then use the following command to compile your project:
 ```bash
-xmake f -p linux --toolchain=cross --sdk=/opt/toolchain/cross/x86_64-xmake-linux-musl-gcc15.2.0 -yvD
+xmake f -p linux --toolchain=cross --sdk=/opt/toolchain/cross/x86_64-xmake-linux-musl-gcc14.2.0 -yvD
 ```
 
 ### Using the Native Toolchain
-Since Musl Libc uses static linking, in theory, the native toolchain mentioned above can be copied to any [Linux](https://wiki.musl-libc.org/supported-platforms) platform with the X86_64 CPU architecture. Assuming its extracted directory is /opt/toolchain/native/x86_64-xmake-linux-musl-gcc15.2.0, simply add it to your PATH environment variable to use it like the system's built-in toolchain:
+Since Musl Libc uses static linking, in theory, the native toolchain mentioned above can be copied to any [Linux](https://wiki.musl-libc.org/supported-platforms) platform with the X86_64 CPU architecture. Assuming its extracted directory is /opt/toolchain/native/x86_64-xmake-linux-musl-gcc14.2.0, simply add it to your PATH environment variable to use it like the system's built-in toolchain:
 ```bash
-export PATH=/opt/toolchain/native/x86_64-xmake-linux-musl-gcc15.2.0/bin:$PATH
+export PATH=/opt/toolchain/native/x86_64-xmake-linux-musl-gcc14.2.0/bin:$PATH
 ```
 
 ### Performance Optimization
