@@ -11,7 +11,8 @@ function download(package, out_dir)
     end
 
     print("downloading package: ", package.url)
-    if package.url:match("%.git$") then
+    local extension = path.extension(package.url)
+    if package.url:match("%.git$") or extension == "" then
         -- remove package directory avoid git clone error
         if os.exists(package_dir) then
             os.rmdir(package_dir)

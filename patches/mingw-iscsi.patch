@@ -1,0 +1,84 @@
+diff --git a/mingw-w64-headers/include/iscsidsc.h b/mingw-w64-headers/include/iscsidsc.h
+index a83f3550f..ccb6f44b4 100644
+--- a/mingw-w64-headers/include/iscsidsc.h
++++ b/mingw-w64-headers/include/iscsidsc.h
+@@ -72,6 +72,10 @@ extern "C" {
+ #define MAX_ISCSI_PORTAL_NAME_LEN 256
+ #define MAX_ISCSI_PORTAL_ADDRESS_LEN 256
+ #define MAX_ISCSI_HBANAME_LEN 256
++#define MAX_ISCSI_NAME_LEN 223
++
++#define ISCSI_ANY_INITIATOR_PORT ((ULONG)-1)
++#define ISCSI_ALL_INITIATOR_PORTS ((ULONG)-1)
+ 
+ typedef enum _TARGET_INFORMATION_CLASS {
+   ProtocolType,
+@@ -206,17 +210,17 @@ typedef struct _IKE_AUTHENTICATION_INFORMATION {
+ 
+ typedef struct _ISCSI_CONNECTION_INFOA {
+   ISCSI_UNIQUE_CONNECTION_ID ConnectionId;
+-  CHAR                       InitiatorAddress;
+-  CHAR                       TargetAddress;
++  PCHAR                      InitiatorAddress;
++  PCHAR                      TargetAddress;
+   USHORT                     InitiatorSocket;
+   USHORT                     TargetSocket;
+   UCHAR                      CID[2];
+ } ISCSI_CONNECTION_INFOA, *PISCSI_CONNECTION_INFOA;
+ 
+-typedef struct _ISCSI_CONNECTION_INFO {
++typedef struct _ISCSI_CONNECTION_INFOW {
+   ISCSI_UNIQUE_CONNECTION_ID ConnectionId;
+-  TCHAR                      InitiatorAddress;
+-  TCHAR                      TargetAddress;
++  PWCHAR                     InitiatorAddress;
++  PWCHAR                     TargetAddress;
+   USHORT                     InitiatorSocket;
+   USHORT                     TargetSocket;
+   UCHAR                      CID[2];
+@@ -224,20 +228,20 @@ typedef struct _ISCSI_CONNECTION_INFO {
+ 
+ typedef struct _ISCSI_SESSION_INFOA {
+   ISCSI_UNIQUE_SESSION_ID SessionId;
+-  CHAR                    InitiatorName;
+-  CHAR                    TargetName;
+-  CHAR                    TargetNodeName;
++  PCHAR                   InitiatorName;
++  PCHAR                   TargetNodeName;
++  PCHAR                   TargetName;
+   UCHAR                   ISID[6];
+   UCHAR                   TSID[2];
+   ULONG                   ConnectionCount;
+   PISCSI_CONNECTION_INFOA Connections;
+ } ISCSI_SESSION_INFOA, *PISCSI_SESSION_INFOA;
+ 
+-typedef struct _ISCSI_SESSION_INFO {
++typedef struct _ISCSI_SESSION_INFOW {
+   ISCSI_UNIQUE_SESSION_ID SessionId;
+-  WCHAR                   InitiatorName;
+-  WCHAR                   TargetName;
+-  WCHAR                   TargetNodeName;
++  PWCHAR                  InitiatorName;
++  PWCHAR                  TargetNodeName;
++  PWCHAR                  TargetName;
+   UCHAR                   ISID[6];
+   UCHAR                   TSID[2];
+   ULONG                   ConnectionCount;
+@@ -274,7 +278,7 @@ typedef struct _ISCSI_TARGET_PORTAL_INFO_EXA {
+   USHORT Socket;
+   ISCSI_SECURITY_FLAGS SecurityFlags;
+   ISCSI_LOGIN_OPTIONS  LoginOptions;
+-} ISCSI_TARGET_PORTAL_INFO_EX, *PISCSI_TARGET_PORTAL_INFO_EX;
++} ISCSI_TARGET_PORTAL_INFO_EXA, *PISCSI_TARGET_PORTAL_INFO_EXA;
+ 
+ typedef struct _ISCSI_TARGET_PORTAL_INFO_EXW {
+   WCHAR  InitiatorName[MAX_ISCSI_HBANAME_LEN];
+@@ -284,7 +288,7 @@ typedef struct _ISCSI_TARGET_PORTAL_INFO_EXW {
+   USHORT Socket;
+   ISCSI_SECURITY_FLAGS SecurityFlags;
+   ISCSI_LOGIN_OPTIONS  LoginOptions;
+-} ISCSI_TARGET_PORTAL_INFO_EX, *PISCSI_TARGET_PORTAL_INFO_EX;
++} ISCSI_TARGET_PORTAL_INFO_EXW, *PISCSI_TARGET_PORTAL_INFO_EXW;
+ 
+ __MINGW_TYPEDEF_AW(ISCSI_CONNECTION_INFO)
+ __MINGW_TYPEDEF_AW(PISCSI_CONNECTION_INFO)
