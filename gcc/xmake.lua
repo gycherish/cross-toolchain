@@ -27,6 +27,7 @@ target("gcc-env")
 
         local extra_configure = {}
         local final_extra_configure = {}
+        local cross_native_extra_configure = {}
         if get_config("Libc") == "musl" then
             extra_configure = table.join(extra_configure, {
                 "--disable-shared",
@@ -38,14 +39,21 @@ target("gcc-env")
                 "--with-specs=" .. "%{!nostdlib:%{!r:%{!nodefaultlibs:-ljemalloc}}}", -- enable jemalloc to be linked by default 
             })
         end
-        if get_config("Libc") == "mingw" and get_config("Arch") == "i686" then
-            extra_configure = table.join(extra_configure, {
-                "--disable-sjlj-exceptions",
-                "--with-dwarf2",
+        if get_config("Libc") == "mingw" then
+            if get_config("Arch") == "i686" then
+                extra_configure = table.join(extra_configure, {
+                    "--disable-sjlj-exceptions",
+                    "--with-dwarf2",
+                })
+            end
+        else -- for mingw, no need config sysroot
+            cross_native_extra_configure = table.join(cross_native_extra_configure, {
+                "--with-sysroot=" .. toolchain_env:get("toolchain.cross_native.sysroot"),
             })
         end
         target:set("toolchain.gcc.extra_configure", extra_configure)
         target:set("toolchain.gcc.final_extra_configure", final_extra_configure)
+        target:set("toolchain.gcc.cross_native_extra_configure", cross_native_extra_configure)
 
         import("core.base.option")
         if option.get("verbose") then
@@ -53,6 +61,7 @@ target("gcc-env")
             print("toolchain.gcc.source_dir: ", target:get("toolchain.gcc.source_dir"))
             print("toolchain.gcc.extra_configure: ", target:get("toolchain.gcc.extra_configure"))
             print("toolchain.gcc.final_extra_configure: ", target:get("toolchain.gcc.final_extra_configure"))
+            print("toolchain.gcc.cross_native_extra_configure: ", target:get("toolchain.gcc.cross_native_extra_configure"))
             print("toolchain.native.gcc.build_dir: ", target:get("toolchain.native.gcc.build_dir"))
             print("toolchain.native.gcc.cc: ", target:get("toolchain.native.gcc.cc"))
             print("toolchain.cross.gcc.build_bootstrap_dir: ", target:get("toolchain.cross.gcc.build_bootstrap_dir"))
@@ -289,7 +298,6 @@ target("gcc-cross-native-build")
         end
         local argv = {
             "--prefix=" .. toolchain_env:get("toolchain.cross_native.prefix"),
-            "--with-sysroot=" .. toolchain_env:get("toolchain.cross_native.sysroot"),
             "--host=" .. toolchain_env:get("toolchain.cross.target"),
             "--target=" .. toolchain_env:get("toolchain.cross.target"),
             "--enable-languages=c,c++",
@@ -309,6 +317,7 @@ target("gcc-cross-native-build")
         }
         argv = table.join(argv, gcc_env:get("toolchain.gcc.extra_configure"))
         argv = table.join(argv, gcc_env:get("toolchain.gcc.final_extra_configure"))
+        argv = table.join(argv, target:get("toolchain.gcc.final_extra_configure"))
         os.vrun("mkdir -p " .. gcc_env:get("toolchain.cross_native.gcc.build_dir"))
         os.cd(gcc_env:get("toolchain.cross_native.gcc.build_dir"))
         os.vrunv(gcc_env:get("toolchain.gcc.source_dir") .. "/configure", argv)
