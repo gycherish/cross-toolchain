@@ -6,7 +6,7 @@ This project is based on [XMake](https://xmake.io/) for one-click building of cr
 ## Install Dependencies
 For example, using [Rocky Linux](https://rockylinux.org/) 8.6, which is also the test environment for this project. After a minimal installation, install the following dependencies:
 ```bash
-sudo dnf install -y gcc gcc-c++ autoconf make bison flex python3 curl wget git tar bzip2 rsync
+sudo dnf install -y gcc gcc-c++ autoconf automake make bison flex python3 curl wget git tar bzip2 rsync
 sudo dnf install -y texinfo --enablerepo=powertools
 ```
 

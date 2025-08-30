@@ -4,7 +4,7 @@
 ## 安装依赖
 以 [Rocky Linux](https://rockylinux.org/) 8.6 为例，这也是本项目的测试环境，使用最小化安装后需要安装以下依赖项：
 ```bash
-sudo dnf install -y gcc gcc-c++ autoconf make bison flex python3 curl wget git tar bzip2 rsync
+sudo dnf install -y gcc gcc-c++ autoconf automake make bison flex python3 curl wget git tar bzip2 rsync
 sudo dnf install -y texinfo --enablerepo=powertools
 ```
 
