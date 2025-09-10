@@ -317,7 +317,7 @@ target("gcc-cross-native-build")
         }
         argv = table.join(argv, gcc_env:get("toolchain.gcc.extra_configure"))
         argv = table.join(argv, gcc_env:get("toolchain.gcc.final_extra_configure"))
-        argv = table.join(argv, target:get("toolchain.gcc.final_extra_configure"))
+        argv = table.join(argv, gcc_env:get("toolchain.gcc.cross_native_extra_configure"))
         os.vrun("mkdir -p " .. gcc_env:get("toolchain.cross_native.gcc.build_dir"))
         os.cd(gcc_env:get("toolchain.cross_native.gcc.build_dir"))
         os.vrunv(gcc_env:get("toolchain.gcc.source_dir") .. "/configure", argv)
