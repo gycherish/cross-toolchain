@@ -123,7 +123,7 @@ target("glibc-cross-native-build")
             return
         end
         local argv = {
-            "--prefix=" .. toolchain_env:get("toolchain.cross_native.sysroot.usr"),
+            "--prefix=/usr",
             "--host=" .. toolchain_env:get("toolchain.cross.target"),
             "--disable-bootstrap",
             "--disable-werror",
@@ -137,5 +137,5 @@ target("glibc-cross-native-build")
         os.cd(glibc_env:get("toolchain.cross_native.glibc.build_dir"))
         os.vrunv(path.join(glibc_env:get("toolchain.glibc.source_dir"), "configure"), argv)
         os.exec("make -j")
-        os.exec("make install -j")
+        os.exec("make install -j DESTDIR=" .. toolchain_env:get("toolchain.cross_native.sysroot"))
     end)

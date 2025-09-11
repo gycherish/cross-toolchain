@@ -109,7 +109,7 @@ target("musl-cross-native-build")
             return
         end
         local argv = {
-            "--prefix=" .. toolchain_env:get("toolchain.cross_native.sysroot.usr"),
+            "--prefix=/usr",
             "--host=" .. toolchain_env:get("toolchain.cross.target"),
             "--disable-shared",
             "CFLAGS=" .. "-fPIC",
@@ -119,5 +119,5 @@ target("musl-cross-native-build")
         os.cd(musl_env:get("toolchain.cross_native.musl.build_dir"))
         os.vrunv(path.join(musl_env:get("toolchain.musl.source_dir"), "configure"), argv)
         os.exec("make -j")
-        os.exec("make install -j")
+        os.exec("make install -j DESTDIR=" .. toolchain_env:get("toolchain.cross_native.sysroot"))
     end)

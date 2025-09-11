@@ -29,7 +29,13 @@ option("BuildType")
     set_values("native", "cross", "cross-native")
     set_description("Set build type for toolchain")
 
+option("Chroot")
+    set_default(false)
+    set_showmenu(true)
+    set_description("Build a chroot environment with cross-native toolchain and minimal tools")
+
 includes("binutils")
+includes("chroot")
 includes("config")
 includes("gcc")
 includes("gdb")
@@ -49,9 +55,19 @@ target("check-cfg")
     on_build(function (target)
         local libc = get_config("Libc")
         local arch = get_config("Arch")
+        local build_type = get_config("BuildType")
+        local chroot = get_config("Chroot")
         if libc == "mingw" then
             if arch ~= "i686" and arch ~= "x86_64" then
                 raise("Invalid arch for mingw: %s", arch)
+            end
+        end
+        if chroot then
+            if build_type ~= "cross-native" then
+                raise("Chroot option is only valid for cross-native build type")
+            end
+            if libc == "mingw" then
+                raise("Chroot option is not valid for mingw")
             end
         end
     end)
@@ -98,10 +114,19 @@ target("toolchain-env")
         target:set("toolchain.cross.build_dir", target:get("toolchain.cross.prefix") .. "-build")
         target:set("toolchain.cross_native.package_dir", "$(projectdir)/package/cross-native")
         target:set("toolchain.cross_native.out_dir", "$(projectdir)/out/cross-native")
+        target:set("toolchain.cross_native.destdir", "/")
         target:set("toolchain.cross_native.prefix", path.join(target:get("toolchain.cross_native.out_dir"), target:get("toolchain.name")))
         target:set("toolchain.cross_native.sysroot", path.join(target:get("toolchain.cross_native.prefix"), "sysroot"))
         target:set("toolchain.cross_native.sysroot.usr", path.join(target:get("toolchain.cross_native.sysroot"), "usr"))
         target:set("toolchain.cross_native.build_dir", target:get("toolchain.cross_native.prefix") .. "-build")
+        if get_config("Chroot") then
+            target:set("toolchain.name", target:get("toolchain.name") .. "-root")
+            target:set("toolchain.cross_native.prefix", "/usr")
+            target:set("toolchain.cross_native.sysroot", path.join(target:get("toolchain.cross_native.out_dir"), target:get("toolchain.name")))
+            target:set("toolchain.cross_native.sysroot.usr", path.join(target:get("toolchain.cross_native.sysroot"), "usr"))
+            target:set("toolchain.cross_native.destdir", target:get("toolchain.cross_native.sysroot"))
+            target:set("toolchain.cross_native.build_dir", target:get("toolchain.cross_native.sysroot") .. "-build")
+        end
 
         import("core.base.option")
         if option.get("verbose") then
@@ -118,6 +143,7 @@ target("toolchain-env")
             print("toolchain.cross.target: ", target:get("toolchain.cross.target"))
             print("toolchain.cross_native.package_dir: ", target:get("toolchain.cross_native.package_dir"))
             print("toolchain.cross_native.out_dir: ", target:get("toolchain.cross_native.out_dir"))
+            print("toolchain.cross_native.destdir: ", target:get("toolchain.cross_native.destdir"))
             print("toolchain.cross_native.prefix: ", target:get("toolchain.cross_native.prefix"))
             print("toolchain.cross_native.sysroot: ", target:get("toolchain.cross_native.sysroot"))
             print("toolchain.cross_native.sysroot.usr: ", target:get("toolchain.cross_native.sysroot.usr"))

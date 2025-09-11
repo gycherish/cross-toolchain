@@ -18,6 +18,9 @@ target("binutils-env")
         target:set("toolchain.cross.binutils.gdb.target.gdb", path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target"), "bin", "gdb" .. toolchain_env:get("toolchain.exe.suffix")))
         target:set("toolchain.cross_native.binutils.build_dir", path.join(toolchain_env:get("toolchain.cross_native.build_dir"), package_info.dirname))
         target:set("toolchain.cross_native.binutils.ld", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "bin", "ld" .. toolchain_env:get("toolchain.exe.suffix")))
+        if get_config("Chroot") then
+            target:set("toolchain.cross_native.binutils.ld", path.join(toolchain_env:get("toolchain.cross_native.sysroot.usr"), "bin", "ld" .. toolchain_env:get("toolchain.exe.suffix")))
+        end
 
         import("core.base.option")
         if option.get("verbose") then
@@ -164,5 +167,5 @@ target("binutils-cross-native-build")
         os.exec("make -j")
         -- BUG: binutils does not use the correct strip when do "make install-strip" and reported an error: "strip: Unable to recognise the format of the input file"
         -- os.exec("make install-strip -j")
-        os.exec("make install -j")
+        os.exec("make install -j DESTDIR=" .. toolchain_env:get("toolchain.cross_native.destdir"))
     end)

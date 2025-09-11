@@ -102,7 +102,7 @@ target("jemalloc-cross-native-build")
             return
         end
         local argv = {
-            "--prefix=" .. toolchain_env:get("toolchain.cross_native.sysroot.usr"),
+            "--prefix=/usr",
             "--host=" .. toolchain_env:get("toolchain.cross.target"),
             "--enable-static",
             "--disable-shared",

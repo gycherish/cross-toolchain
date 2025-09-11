@@ -24,6 +24,11 @@ target("gcc-env")
         target:set("toolchain.cross_native.gcc.cc0", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "bin", "cc" .. toolchain_env:get("toolchain.exe.suffix"))) -- cc for backwards compatibility
         target:set("toolchain.cross_native.gcc.cc", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "bin", "gcc" .. toolchain_env:get("toolchain.exe.suffix")))
         target:set("toolchain.cross_native.gcc.cc1_dir", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "libexec", "gcc", toolchain_env:get("toolchain.cross.target"), major_version))
+        if get_config("Chroot") then
+            target:set("toolchain.cross_native.gcc.cc0", path.join(toolchain_env:get("toolchain.cross_native.sysroot.usr"), "bin", "cc" .. toolchain_env:get("toolchain.exe.suffix")))
+            target:set("toolchain.cross_native.gcc.cc", path.join(toolchain_env:get("toolchain.cross_native.sysroot.usr"), "bin", "gcc" .. toolchain_env:get("toolchain.exe.suffix")))
+            target:set("toolchain.cross_native.gcc.cc1_dir", path.join(toolchain_env:get("toolchain.cross_native.sysroot.usr"), "libexec", "gcc", toolchain_env:get("toolchain.cross.target"), major_version))
+        end
 
         local extra_configure = {}
         local final_extra_configure = {}
@@ -46,7 +51,7 @@ target("gcc-env")
                     "--with-dwarf2",
                 })
             end
-        else -- for mingw, no need config sysroot
+        elseif not get_config("Chroot") then
             cross_native_extra_configure = table.join(cross_native_extra_configure, {
                 "--with-sysroot=" .. toolchain_env:get("toolchain.cross_native.sysroot"),
             })
@@ -322,7 +327,7 @@ target("gcc-cross-native-build")
         os.cd(gcc_env:get("toolchain.cross_native.gcc.build_dir"))
         os.vrunv(gcc_env:get("toolchain.gcc.source_dir") .. "/configure", argv)
         os.exec("make -j")
-        os.exec("make install-strip -j")
+        os.exec("make install-strip -j DESTDIR=" .. toolchain_env:get("toolchain.cross_native.destdir"))
         os.cp(gcc_env:get("toolchain.cross_native.gcc.cc"), gcc_env:get("toolchain.cross_native.gcc.cc0"))
     end)
 
@@ -339,6 +344,9 @@ target("gcc-cross-native-package")
         add_deps("mingw-cross-native-build")
     else
         add_deps("glibc-cross-native-build")
+    end
+    if get_config("Chroot") then
+        add_deps("chroot")
     end
     on_build(function (target)
         import("core.project.project")

@@ -1,0 +1,124 @@
+pkg-config:
+     cmd: ./configure --prefix=/usr/local --with-pic --enable-static --disable-shared
+          make -j
+          make install
+          ln -fs /usr/local/bin/pkgconf /usr/local/bin/pkg-config
+
+bzip2:
+     cmd: make install PREFIX=/usr/local
+
+cmake:
+     cmd: ./bootstrap --prefix=/usr/local --parallel=16
+          make -j
+          make install
+
+json-c:
+     cmd: mkdir build
+          cd build
+          cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=OFF -DBUILD_STATIC_LIBS=ON -DDISABLE_STATIC_FPIC=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5  ..
+     deps: cmake
+
+zlib:
+     cmd: ./configure --prefix=/usr/local --static
+          make -j CFLAGS="-fPIC"
+          make install
+
+libffi: 
+     cmd: ./configure --prefix=/usr/local --with-pic --enable-static --disable-shared
+          make -j
+          make install
+
+pcre2:
+     cmd: ./configure --prefix=/usr/local --with-pic --enable-static --disable-shared
+          make -j
+          make install
+
+perl: 
+    cmd: ./Configure -des -Dprefix=/usr/local -Uusedl -A ccflags=-D_GNU_SOURCE
+         make -j
+         make install
+
+openssl:
+    cmd: ./Configure --prefix=/usr/local no-shared no-comp enable-pic no-docs
+         make -j
+         make install
+    deps: perl
+
+python: 
+    cmd: MODULE_BUILDTYPE=static ./configure --prefix=/usr/local --disable-shared --disable-test-modules
+         make -j
+         make install
+    deps: openssl zlib
+
+    site-packages: setuptools flit_core wheel meson
+              cmd: pip3 install <package-name>.whl
+
+ninja:
+     cmd: ./configure.py --bootstrap
+          cp ninja /usr/local/bin
+     deps: python
+
+glib:
+     cmd: meson setup -Dprefix=/usr/local -Ddefault_library=static -Db_staticpic=true -Dtests=false build
+          meson compile -C build
+          meson install -C build
+     deps: pkg-config pcre2 libffi
+
+libxml2:
+     cmd: ./configure --prefix=/usr/local --with-pic --enable-static --disable-shared
+          make -j
+          make install
+
+libxslt: 
+     cmd: ./configure --prefix=/usr/local --with-pic --enable-static --disable-shared
+          make -j
+          make install
+     deps: libxml2
+
+libtirpc:
+     cmd: ./configure --prefix=/usr/local --with-pic --enable-static --disable-shared --disable-gssapi
+          make -j
+          make install
+     deps: sys/queue.h
+
+gmp:
+     cmd: ./configure --prefix=/usr/local --with-pic --enable-static --disable-shared
+          make -j
+          make install
+
+nettle:
+     cmd: ./configure --prefix=/usr/local --enable-pic --enable-static --disable-shared --disable-openssl
+          make -j
+          make install
+     deps: gmp
+
+libtasn1:
+     cmd: ./configure --prefix=/usr/local --with-pic --enable-static --disable-shared
+          make -j
+          make install
+
+libunistring:
+     cmd: ./configure --prefix=/usr/local --enable-pic --enable-static --disable-shared
+          make -j
+          make install
+
+gnutls:
+     cmd: ./configure --prefix=/usr/local --with-pic --enable-static --disable-shared --without-p11-kit --disable-cxx --disable-doc
+          make -j
+          make install
+     deps: libnettle gmp libtasn1 libunistring
+
+libvirt:
+     cmd: meson setup -Dprefix=/usr/local -Ddefault_library=static -Ddefault_both_libraries=static -Db_staticpic=true -Ddocs=disabled -Dtests=disabled \
+          -Ddriver_test=disabled -Ddriver_vmware=disabled -Ddriver_openvz=disabled -Ddriver_qemu=enabled -Ddriver_libvirtd=enabled -Ddriver_remote=enabled \
+          -Dssh_proxy=disabled -Dpm_utils=disabled build
+          meson compile -C build
+          meson install -C build
+     deps: meson glib libxml2 libxslt gnutls json-c
+
+
+
+存在问题：
+     1. x86_64-xmake-linux-musl/bin/ld: /usr/lib/gcc/x86_64-xmake-linux-musl/14/../../../libc.a(getc_unlocked.lo): in function `getc_unlocked':
+        getc_unlocked.c:(.text.getc_unlocked+0x17): undefined reference to `__uflow'
+        需要完整链接 libc: -Wl,--whole-archive -lc -Wl,--no-whole-archive
