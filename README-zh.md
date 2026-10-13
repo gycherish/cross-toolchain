@@ -4,11 +4,11 @@
 ## 安装依赖
 以 [Rocky Linux](https://rockylinux.org/) 8.6 为例，这也是本项目的测试环境，使用最小化安装后需要安装以下依赖项：
 ```bash
-sudo dnf install -y gcc gcc-c++ autoconf automake make bison flex python3 curl wget git tar bzip2 rsync
+sudo dnf install -y gcc gcc-c++ autoconf automake make bison flex python3 curl wget git tar bzip2 xz patch rsync
 sudo dnf install -y texinfo --enablerepo=powertools
 ```
 
-由于本项目基于 XMake 构建，还需要安装 XMake，可参考 XMake 官方文档进行安装。对于其他 Linux 发行版，请根据上述命令自己调整并安装，理论上本项目可以在其他 Linux 发行版上编译。
+由于本项目基于 XMake 构建，还需要安装 XMake，可参考 XMake 官方文档进行安装。对于其他 Linux 发行版，请根据上述命令自己调整并安装，理论上本项目可以在其他 Linux 发行版上编译。本项目也在 Fedora 44（GCC 16）上验证过。
 
 ## 配置
 项目提供以下配置项：
@@ -38,24 +38,29 @@ xmake f --Libc=musl --Arch=x86_64 --BuildType=cross-native
 xmake -yvD
 ```
 
-假设使用的 gcc 版本为 14.2.0，则以上命令执行完后将在项目根目录下生成最终的工具链：
-- package/cross/x86_64-xmake-linux-musl-gcc14.2.0.tar.gz: 运行在宿主平台，能够生成目标平台为 x86_64-xmake-linux 的二进制的交叉工具链
-- package/cross-native/x86_64-xmake-linux-musl-gcc14.2.0.tar.gz: 运行在 x86_64-xmake-linux 平台，能够生成目标平台为 x86_64-xmake-linux 二进制的本地工具链
+假设使用的 gcc 版本为 16.2.0，则以上命令执行完后将在项目根目录下生成最终的工具链：
+- package/cross/x86_64-xmake-linux-musl-gcc16.2.0.tar.gz: 运行在宿主平台，能够生成目标平台为 x86_64-xmake-linux 的二进制的交叉工具链
+- package/cross-native/x86_64-xmake-linux-musl-gcc16.2.0.tar.gz: 运行在 x86_64-xmake-linux 平台，能够生成目标平台为 x86_64-xmake-linux 二进制的本地工具链
 
 ## 使用
 以使用 XMake 作为构建系统说明使用方法。
 
 ### 使用交叉工具链
-将上文的交叉工具链解压到指定目录，如 /opt/toolchain/cross/x86_64-xmake-linux-musl-gcc14.2.0，则可以使用以下命令编译项目代码：
+将上文的交叉工具链解压到指定目录，如 /opt/toolchain/cross/x86_64-xmake-linux-musl-gcc16.2.0，则可以使用以下命令编译项目代码：
 ```bash
-xmake f -p linux --toolchain=cross --sdk=/opt/toolchain/cross/x86_64-xmake-linux-musl-gcc14.2.0 -yvD
+xmake f -p linux --toolchain=cross --sdk=/opt/toolchain/cross/x86_64-xmake-linux-musl-gcc16.2.0 -yvD
 ```
 
 ### 使用本地工具链
-由于 Musl Libc 使用了静态链接，理论上上文中的本地工具链可以拷贝到任何 CPU 架构是 X86_64 的 [Linux](https://wiki.musl-libc.org/supported-platforms) 平台上运行，假设其解压后的目录为 /opt/toolchain/native/x86_64-xmake-linux-musl-gcc14.2.0，则只需要将其加入 PATH 环境变量中即可像使用系统自带的工具链那样去使用了：
+由于 Musl Libc 使用了静态链接，理论上上文中的本地工具链可以拷贝到任何 CPU 架构是 X86_64 的 [Linux](https://wiki.musl-libc.org/supported-platforms) 平台上运行，假设其解压后的目录为 /opt/toolchain/native/x86_64-xmake-linux-musl-gcc16.2.0，则只需要将其加入 PATH 环境变量中即可像使用系统自带的工具链那样去使用了：
 ```bash
-export PATH=/opt/toolchain/native/x86_64-xmake-linux-musl-gcc14.2.0/bin:$PATH
+export PATH=/opt/toolchain/native/x86_64-xmake-linux-musl-gcc16.2.0/bin:$PATH
 ```
 
 ### 性能优化
 由于 Musl Libc 的内存分配器的性能一般，本项目使用 [Jemalloc](https://jemalloc.net/) 替换掉了 Musl Libc 的内存分配器，上层用户无需显式链接 Jemalloc 便可无感使用 Jemalloc。
+
+## i686 MinGW 工具链说明
+
+- 链接出的可执行文件默认带有大地址标志（`--large-address-aware`），在 64 位 Windows 上可以使用 4 GB 地址空间。本地工具链中的 `cc1plus.exe` 等程序同样受益，编译大型 C++ 代码时不会在 2 GB 处耗尽内存。如需关闭，链接时传入 `-Wl,--disable-large-address-aware`
+- `max_align_t` 与默认的 `operator new` 对齐均为 8 字节，与 msvcrt 的 `malloc` 实际提供的对齐一致。GCC 原本在 i386 上把它们定为 16 字节，而 mingw-w64 的 `stddef.h` 定义为 8 字节，两者谁先被包含就使用谁，同一程序的不同编译单元可能得到不同的值，导致依赖 `alignof(std::max_align_t)` 的类型出现两种内存布局

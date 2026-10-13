@@ -1,0 +1,57 @@
+diff --git a/gcc/c-family/c-common.cc b/gcc/c-family/c-common.cc
+index de05741..0b9c207 100644
+--- a/gcc/c-family/c-common.cc
++++ b/gcc/c-family/c-common.cc
+@@ -9638,12 +9638,18 @@ scalar_to_vector (location_t loc, enum tree_code code, tree op0, tree op1,
+    requirement is at least as great as that of every scalar type, and whose
+    alignment requirement is supported in every context.  */
+ 
++/* Nonzero if __float128 does not count towards max_align_t, for targets whose
++   malloc cannot provide its alignment.  Must agree with ginclude/stddef.h.  */
++#ifndef MAX_ALIGN_T_IGNORES_FLOAT128
++#define MAX_ALIGN_T_IGNORES_FLOAT128 0
++#endif
++
+ unsigned
+ max_align_t_align ()
+ {
+   unsigned int max_align = MAX (TYPE_ALIGN (long_long_integer_type_node),
+ 				TYPE_ALIGN (long_double_type_node));
+-  if (float128_type_node != NULL_TREE)
++  if (float128_type_node != NULL_TREE && !MAX_ALIGN_T_IGNORES_FLOAT128)
+     max_align = MAX (max_align, TYPE_ALIGN (float128_type_node));
+   return max_align;
+ }
+diff --git a/gcc/config/i386/mingw-w64.h b/gcc/config/i386/mingw-w64.h
+index 5d71aa5..231b21b 100644
+--- a/gcc/config/i386/mingw-w64.h
++++ b/gcc/config/i386/mingw-w64.h
+@@ -135,3 +135,9 @@ along with GCC; see the file COPYING3.  If not see
+    original mingw32.  */
+ #undef TARGET_LIBC_HAS_FUNCTION
+ #define TARGET_LIBC_HAS_FUNCTION gnu_libc_has_function
++
++/* msvcrt's malloc only guarantees 8-byte alignment on 32-bit Windows, so
++   max_align_t, and with it the default operator new alignment, must not be
++   raised to __float128's 16 there.  See also ginclude/stddef.h.  */
++#undef MAX_ALIGN_T_IGNORES_FLOAT128
++#define MAX_ALIGN_T_IGNORES_FLOAT128 (!TARGET_64BIT)
+diff --git a/gcc/ginclude/stddef.h b/gcc/ginclude/stddef.h
+index 454e5e9..f3c4bf0 100644
+--- a/gcc/ginclude/stddef.h
++++ b/gcc/ginclude/stddef.h
+@@ -444,8 +444,12 @@ typedef struct {
+      sufficiently aligned for it.  This code must work in C++, so we
+      use __float128 here; that is only available on some
+      architectures, but only on i386 is extra alignment needed for
+-     __float128.  */
+-#ifdef __i386__
++     __float128.
++     On 32-bit mingw the C runtime's malloc only guarantees 8-byte alignment,
++     and mingw-w64's own stddef.h defines max_align_t without this member.
++     Whichever of the two is seen first wins, so leaving it here would give
++     max_align_t a different alignment depending on include order.  */
++#if defined(__i386__) && !defined(__MINGW32__)
+   __float128 __max_align_f128 __attribute__((__aligned__(__alignof(__float128))));
+ #endif
+ } max_align_t;

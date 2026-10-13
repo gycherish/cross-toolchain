@@ -44,6 +44,9 @@ target("gcc-env")
                 extra_configure = table.join(extra_configure, {
                     "--disable-sjlj-exceptions",
                     "--with-dwarf2",
+                    -- link 32-bit executables large address aware, including the cc1plus.exe of
+                    -- the cross native toolchain, which otherwise runs out of memory at 2 GB
+                    "--enable-large-address-aware",
                 })
             end
         else -- for mingw, no need config sysroot
@@ -136,8 +139,8 @@ target("gcc-native-build")
         os.vrun("mkdir -p " .. gcc_env:get("toolchain.native.gcc.build_dir"))
         os.cd(gcc_env:get("toolchain.native.gcc.build_dir"))
         os.vrunv(gcc_env:get("toolchain.gcc.source_dir") .. "/configure", argv)
-        os.exec("make -j")
-        os.exec("make install-strip -j")
+        os.exec("make -j" .. os.default_njob())
+        os.exec("make install-strip -j" .. os.default_njob())
     end)
 
 target("gcc-cross-bootstrap-build")
@@ -190,8 +193,8 @@ target("gcc-cross-bootstrap-build")
         os.vrun("mkdir -p " .. gcc_env:get("toolchain.cross.gcc.build_bootstrap_dir"))
         os.cd(gcc_env:get("toolchain.cross.gcc.build_bootstrap_dir"))
         os.vrunv(path.join(gcc_env:get("toolchain.gcc.source_dir"), "configure"), argv)
-        os.exec("make -j")
-        os.exec("make install-strip -j")
+        os.exec("make -j" .. os.default_njob())
+        os.exec("make install-strip -j" .. os.default_njob())
     end)
 
 target("gcc-cross-final-build")
@@ -247,8 +250,8 @@ target("gcc-cross-final-build")
         os.vrun("mkdir -p " .. gcc_env:get("toolchain.cross.gcc.build_final_dir"))
         os.cd(gcc_env:get("toolchain.cross.gcc.build_final_dir"))
         os.vrunv(gcc_env:get("toolchain.gcc.source_dir") .. "/configure", argv)
-        os.exec("make -j")
-        os.exec("make install-strip -j")
+        os.exec("make -j" .. os.default_njob())
+        os.exec("make install-strip -j" .. os.default_njob())
         io.open(gcc_env:get("toolchain.cross.gcc.final_install_flag"), "w")
     end)
 
@@ -321,8 +324,8 @@ target("gcc-cross-native-build")
         os.vrun("mkdir -p " .. gcc_env:get("toolchain.cross_native.gcc.build_dir"))
         os.cd(gcc_env:get("toolchain.cross_native.gcc.build_dir"))
         os.vrunv(gcc_env:get("toolchain.gcc.source_dir") .. "/configure", argv)
-        os.exec("make -j")
-        os.exec("make install-strip -j")
+        os.exec("make -j" .. os.default_njob())
+        os.exec("make install-strip -j" .. os.default_njob())
         os.cp(gcc_env:get("toolchain.cross_native.gcc.cc"), gcc_env:get("toolchain.cross_native.gcc.cc0"))
     end)
 
@@ -332,6 +335,7 @@ target("gcc-cross-native-package")
     add_deps("gcc-cross-package")
     add_deps("binutils-cross-native-build")
     add_deps("gcc-cross-native-build")
+    add_deps("gdb-cross-native-build")
     if get_config("Libc") == "musl" then
         add_deps("jemalloc-cross-native-build")
         add_deps("musl-cross-native-build")

@@ -66,7 +66,13 @@ function patch(package, out_dir)
             raise("patch file not found: ", patch_file)
         end
         print("applying patch: ", patch_file, " to ", package_dir)
-        git.apply(patch_file, {repodir = package_dir})
+        if os.isdir(path.join(package_dir, ".git")) then
+            git.apply(patch_file, {repodir = package_dir})
+        else
+            -- not git apply: the source of a tarball sits inside this project's repository, and
+            -- git apply silently skips every path of a patch outside the current subdirectory
+            os.vrunv("patch", {"-p1", "--forward", "--batch", "-d", package_dir, "-i", patch_file})
+        end
     end
 
     os.touch(has_patched_flag)

@@ -12,10 +12,6 @@ target("binutils-env")
         target:set("toolchain.native.binutils.ld", path.join(toolchain_env:get("toolchain.native.prefix"), "bin", "ld"))
         target:set("toolchain.cross.binutils.build_dir", path.join(toolchain_env:get("toolchain.cross.build_dir"), package_info.dirname))
         target:set("toolchain.cross.binutils.ld", path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target"), "bin", "ld"))
-        target:set("toolchain.cross.binutils.gdb.host.build_dir", path.join(toolchain_env:get("toolchain.cross.build_dir"), package_info.dirname .. "-gdb-host"))
-        target:set("toolchain.cross.binutils.gdb.host.gdb", path.join(toolchain_env:get("toolchain.cross.prefix"), "bin", toolchain_env:get("toolchain.cross.target") .. "-gdb"))
-        target:set("toolchain.cross.binutils.gdb.target.build_dir", path.join(toolchain_env:get("toolchain.cross.build_dir"), package_info.dirname .. "-gdb-target"))
-        target:set("toolchain.cross.binutils.gdb.target.gdb", path.join(toolchain_env:get("toolchain.cross.prefix"), toolchain_env:get("toolchain.cross.target"), "bin", "gdb" .. toolchain_env:get("toolchain.exe.suffix")))
         target:set("toolchain.cross_native.binutils.build_dir", path.join(toolchain_env:get("toolchain.cross_native.build_dir"), package_info.dirname))
         target:set("toolchain.cross_native.binutils.ld", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "bin", "ld" .. toolchain_env:get("toolchain.exe.suffix")))
 
@@ -27,10 +23,6 @@ target("binutils-env")
             print("toolchain.native.binutils.ld: ", target:get("toolchain.native.binutils.ld"))
             print("toolchain.cross.binutils.build_dir: ", target:get("toolchain.cross.binutils.build_dir"))
             print("toolchain.cross.binutils.ld: ", target:get("toolchain.cross.binutils.ld"))
-            print("toolchain.cross.binutils.gdb.host.build_dir: ", target:get("toolchain.cross.binutils.gdb.host.build_dir"))
-            print("toolchain.cross.binutils.gdb.host.gdb: ", target:get("toolchain.cross.binutils.gdb.host.gdb"))
-            print("toolchain.cross.binutils.gdb.target.build_dir: ", target:get("toolchain.cross.binutils.gdb.target.build_dir"))
-            print("toolchain.cross.binutils.gdb.target.gdb: ", target:get("toolchain.cross.binutils.gdb.target.gdb"))
             print("toolchain.cross_native.binutils.build_dir: ", target:get("toolchain.cross_native.binutils.build_dir"))
             print("toolchain.cross_native.binutils.ld: ", target:get("toolchain.cross_native.binutils.ld"))
         end
@@ -75,8 +67,8 @@ target("binutils-native-build")
             "--disable-werror",
             "--disable-nls",
             "--disable-multilib",
-            "--enable-gdb",
-            "--enable-gdbserver",
+            "--disable-gdb",
+            "--disable-gdbserver",
             "--with-gmp=" .. gmp_env:get("toolchain.native.gmp.prefix"),
             "--with-isl=" .. isl_env:get("toolchain.native.isl.prefix"),
             "--with-mpc=" .. mpc_env:get("toolchain.native.mpc.prefix"),
@@ -85,8 +77,8 @@ target("binutils-native-build")
         os.vrun("mkdir -p " .. binutils_env:get("toolchain.native.binutils.build_dir"))
         os.cd(binutils_env:get("toolchain.native.binutils.build_dir"))
         os.vrunv(path.join(binutils_env:get("toolchain.binutils.source_dir"), "configure"), argv)
-        os.exec("make -j")
-        os.exec("make install-strip -j")
+        os.exec("make -j" .. os.default_njob())
+        os.exec("make install-strip -j" .. os.default_njob())
     end)
 
 target("binutils-cross-build")
@@ -119,8 +111,8 @@ target("binutils-cross-build")
         os.vrun("mkdir -p " .. binutils_env:get("toolchain.cross.binutils.build_dir"))
         os.cd(binutils_env:get("toolchain.cross.binutils.build_dir"))
         os.vrunv(path.join(binutils_env:get("toolchain.binutils.source_dir"), "configure"), argv)
-        os.exec("make -j")
-        os.exec("make install-strip -j")
+        os.exec("make -j" .. os.default_njob())
+        os.exec("make install-strip -j" .. os.default_njob())
     end)
 
 target("binutils-cross-native-build")
@@ -151,8 +143,8 @@ target("binutils-cross-native-build")
             "--disable-werror",
             "--disable-nls",
             "--disable-multilib",
-            "--enable-gdb",
-            "--enable-gdbserver",
+            "--disable-gdb",
+            "--disable-gdbserver",
             "--with-gmp=" .. gmp_env:get("toolchain.cross.gmp.prefix"),
             "--with-isl=" .. isl_env:get("toolchain.cross.isl.prefix"),
             "--with-mpc=" .. mpc_env:get("toolchain.cross.mpc.prefix"),
@@ -161,8 +153,8 @@ target("binutils-cross-native-build")
         os.vrun("mkdir -p " .. binutils_env:get("toolchain.cross_native.binutils.build_dir"))
         os.cd(binutils_env:get("toolchain.cross_native.binutils.build_dir"))
         os.vrunv(path.join(binutils_env:get("toolchain.binutils.source_dir"), "configure"), argv)
-        os.exec("make -j")
+        os.exec("make -j" .. os.default_njob())
         -- BUG: binutils does not use the correct strip when do "make install-strip" and reported an error: "strip: Unable to recognise the format of the input file"
-        -- os.exec("make install-strip -j")
-        os.exec("make install -j")
+        -- os.exec("make install-strip -j" .. os.default_njob())
+        os.exec("make install -j" .. os.default_njob())
     end)

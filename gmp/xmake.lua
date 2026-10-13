@@ -64,13 +64,15 @@ target("gmp-native-build")
         local argv = {
             "--prefix=" .. gmp_env:get("toolchain.native.gmp.prefix"),
             "--disable-shared",
-            "--with-pic"
+            "--with-pic",
+            -- the compiler checks of gmp 6.3.0 are not valid C23, the default since gcc 15
+            "CC=gcc -std=gnu17"
         }
         os.vrun("mkdir -p " .. gmp_env:get("toolchain.native.gmp.build_dir"))
         os.cd(gmp_env:get("toolchain.native.gmp.build_dir"))
         os.vrunv(path.join(gmp_env:get("toolchain.gmp.source_dir"), "configure"), argv)
-        os.exec("make -j")
-        os.exec("make install-strip -j")
+        os.exec("make -j" .. os.default_njob())
+        os.exec("make install-strip -j" .. os.default_njob())
     end)
 
 target("gmp-cross-build")
@@ -90,11 +92,14 @@ target("gmp-cross-build")
             "--prefix=" .. gmp_env:get("toolchain.cross.gmp.prefix"),
             "--host=" .. toolchain_env:get("toolchain.cross.target"),
             "--disable-shared",
-            "--with-pic"
+            "--with-pic",
+            -- the compiler checks of gmp 6.3.0 are not valid C23, the default since gcc 15
+            "CC=" .. toolchain_env:get("toolchain.cross.target") .. "-gcc -std=gnu17",
+            "CC_FOR_BUILD=gcc -std=gnu17"
         }
         os.vrun("mkdir -p " .. gmp_env:get("toolchain.cross.gmp.build_dir"))
         os.cd(gmp_env:get("toolchain.cross.gmp.build_dir"))
         os.vrunv(path.join(gmp_env:get("toolchain.gmp.source_dir"), "configure"), argv)
-        os.exec("make -j")
-        os.exec("make install-strip -j")
+        os.exec("make -j" .. os.default_njob())
+        os.exec("make install-strip -j" .. os.default_njob())
     end)
