@@ -1,6 +1,6 @@
 set_project("cross-toolchain")
 set_xmakever("2.9.3")
-set_version("0.1.0")
+set_version("0.2.0")
 
 set_warnings("all", "error")
 set_allowedplats("linux")
