@@ -22,6 +22,18 @@ target("mingw-env")
         target:set("toolchain.cross_native.mingw.winpthread_dll", path.join(toolchain_env:get("toolchain.cross_native.prefix"), "bin", target:get("toolchain.mingw.winpthread.dll_name")))
         target:set("toolchain.cross_native.mingw.install_flag", path.join(target:get("toolchain.cross_native.mingw.build_dir"), "mingw-installed"))
 
+        local crt_extra_configure = {}
+        if get_config("Arch") == "i686" then
+            crt_extra_configure = table.join(crt_extra_configure, {
+                "--disable-lib64",
+            })
+        else
+            crt_extra_configure = table.join(crt_extra_configure, {
+                "--disable-lib32",
+            })
+        end
+        target:set("toolchain.mingw.crt.extra_configure", crt_extra_configure)
+
         import("core.base.option")
         if option.get("verbose") then
             print("toolchain.source.mingw: ", package_info)
@@ -29,6 +41,7 @@ target("mingw-env")
             print("toolchain.mingw.headers.source_dir: ", target:get("toolchain.mingw.headers.source_dir"))
             print("toolchain.mingw.headers.link: ", target:get("toolchain.mingw.headers.link"))
             print("toolchain.mingw.crt.source_dir: ", target:get("toolchain.mingw.crt.source_dir"))
+            print("toolchain.mingw.crt.extra_configure: ", target:get("toolchain.mingw.crt.extra_configure"))
             print("toolchain.mingw.winpthread.dll_name: ", target:get("toolchain.mingw.winpthread.dll_name"))
             print("toolchain.cross.mingw.build_dir: ", target:get("toolchain.cross.mingw.build_dir"))
             print("toolchain.cross.mingw.headers.build_dir: ", target:get("toolchain.cross.mingw.headers.build_dir"))
@@ -103,6 +116,7 @@ target("mingw-cross-crt-build")
             "--with-default-msvcrt=msvcrt",
             "CC=" .. gcc_env:get("toolchain.cross.gcc.cc")
         }
+        argv = table.join(argv, mingw_env:get("toolchain.mingw.crt.extra_configure"))
         os.vrun("mkdir -p " .. mingw_env:get("toolchain.cross.mingw.crt.build_dir"))
         os.cd(mingw_env:get("toolchain.cross.mingw.crt.build_dir"))
         os.vrunv(path.join(mingw_env:get("toolchain.mingw.crt.source_dir"), "configure"), argv)
@@ -163,6 +177,7 @@ target("mingw-cross-native-build")
             "--with-libraries=all",
             "--with-tools=all"
         }
+        argv = table.join(argv, mingw_env:get("toolchain.mingw.crt.extra_configure"))
         os.vrun("mkdir -p " .. mingw_env:get("toolchain.cross_native.mingw.build_dir"))
         os.cd(mingw_env:get("toolchain.cross_native.mingw.build_dir"))
         os.vrunv(path.join(mingw_env:get("toolchain.mingw.source_dir"), "configure"), argv)

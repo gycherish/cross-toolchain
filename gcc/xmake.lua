@@ -359,6 +359,10 @@ target("gcc-cross-native-package")
             os.cp(mingw_env:get("toolchain.cross_native.mingw.winpthread_dll"), cc1_winpthread)
             local as_winpthread = path.join(toolchain_env:get("toolchain.cross_native.prefix"), toolchain_env:get("toolchain.cross.target"), "bin", mingw_env:get("toolchain.mingw.winpthread.dll_name"))
             os.cp(mingw_env:get("toolchain.cross_native.mingw.winpthread_dll"), as_winpthread)
+            local prefix = toolchain_env:get("toolchain.cross_native.prefix")
+            for _, dll in ipairs(os.files(path.join(prefix, "lib", "libgcc_s_*.dll"))) do
+                os.mv(dll, path.join(prefix, "bin", path.filename(dll)))
+            end
         end
         os.mkdir(toolchain_env:get("toolchain.cross_native.package_dir"))
         os.cd(toolchain_env:get("toolchain.cross_native.out_dir"))
