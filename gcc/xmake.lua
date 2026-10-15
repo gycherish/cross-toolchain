@@ -371,5 +371,8 @@ target("gcc-cross-native-package")
             package_file,
             toolchain_env:get("toolchain.name")
         }
+        if get_config("Libc") == "mingw" then
+            argv = table.join({"--dereference"}, argv)
+        end
         os.execv("tar", argv)
     end)
